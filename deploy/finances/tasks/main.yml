@@ -1,0 +1,4 @@
+---
+- name: Checkout git repo
+  sudo: no
+  git: "repo={{ git_repo }} dest={{ web_root }} version={{ git_branch }} accept_hostkey=yes"

@@ -1,0 +1,4 @@
+---
+git_branch: master
+git_repo: git@github.com:khaliqgant/finance-app.git
+web_root: /home/kjg/finances

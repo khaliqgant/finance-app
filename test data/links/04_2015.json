@@ -1,0 +1,42 @@
+{
+    "links" : {
+        "amex" : {
+            "cash" : {
+                "link" : "https://online.americanexpress.com/myca/logon/us/action/LogonHandler?request_type=LogonHandler&Face=en_US&inav=iNavLnkLog"
+            },
+            "sky" : {
+                "link" : "https://online.americanexpress.com/myca/logon/us/action/LogonHandler?request_type=LogonHandler&Face=en_US&inav=iNavLnkLog"
+            },
+            "points" : {
+                "link" : "https://online.americanexpress.com/myca/logon/us/action/LogonHandler?request_type=LogonHandler&Face=en_US&inav=iNavLnkLog"
+            }
+        },
+        "visa" : {
+            "slate" : {
+                "link" : "https://www.chase.com/"
+            },
+            "freedom" : {
+                "link" : "https://www.chase.com/"
+            },
+            "bofa" : {
+                "link" : "https://www.bankofamerica.com/"
+            }
+        },
+        "mc" : {
+            "citi" : {
+                "link" : "https://online.citibank.com/US/JPS/portal/Index.do"
+            },
+            "sallie" : {
+                "link" : "https://www.barclaycardus.com/servicing/home?redirectAction=%2FRewards.action"
+            }
+        },
+        "discover" : {
+            "more" : {
+                "link" : "https://www.discovercard.com/cardmembersvcs/loginlogout/app/ac_main"
+            },
+            "chrome" : {
+                "link" : "https://www.discovercard.com/cardmembersvcs/loginlogout/app/ac_main"
+            }
+        }
+    }
+}

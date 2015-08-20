@@ -1,0 +1,140 @@
+doctype html
+html.
+	<head>
+		<meta charset=utf-8 />
+		<meta name="description" content="description">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		<title>Khaliq's Finances</title>
+
+		<link rel="stylesheet" media="screen" href="/assets/css/app.css" />
+
+		<!--[if IE]>
+		<script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+		<![endif]-->
+	</head>
+
+	<body>
+		<div class="fixed">
+			<nav class="top-bar" data-topbar role="navigation">
+				<ul class="title-area">
+					<li class="name js-dropdown-activate">
+						<h1 class="nav">
+							<i class="fa fa-money"></i>
+						</h1>
+					</li>
+					<li class="mobile">
+						<a class="js-month" href="#">
+							<i class="fa fa-minus js-decrease"></i>
+							<span>Month</span>
+							<i class="fa fa-plus js-increase"></i>
+						</a>
+					</li>
+				</ul>
+
+				<section class="top-bar-section">
+				<!-- Right Nav Section -->
+				<ul class="right">
+					<li>
+						<a href="#income">Income
+							<span class="js-income numerical positive"></span>
+						</a>
+					</li>
+					<li>
+						<a href="#debt">Debt
+							<span class="js-payments numerical negative"></span>
+						</a>
+					</li>
+					<li>
+						<a href="#pay">To Pay At Least
+							<span class="js-toPay numerical negative"></span>
+						</a>
+					</li>
+					<li>
+						<a class="js-notes-header" href="#notes">Notes</a>
+					</li>
+				</ul>
+
+				<ul class="right middle">
+					<li>
+					<a class="js-month" href="#">
+						<i class="fa fa-minus js-decrease"></i>
+						<span>Month</span>
+						<i class="fa fa-plus js-increase"></i>
+					</a>
+					</li>
+				</ul>
+
+				<!-- Left Nav Section -->
+				<ul class="left">
+					<li class="name-header"><a href="#">Khaliq's Finances</a></li>
+					<li class="refresh" title="reload the app"><i class="fa fa-refresh js-refresh"></i></li>
+				</ul>
+				</section>
+			</nav>
+		</div>
+
+		<main>
+			<div class="mobile m-overview js-dropdown">
+				<div class="js-difference dropdown">
+					Remaining : <span class="js-short numerical"></span>
+				</div>
+				<div class="js-leftToPay dropdown">
+					Left To Pay: <span class="js-left numerical to-pay"></span>
+				</div>
+			</div>
+			<div class="large-7 small-11 columns">
+				<div class="income financial" data-model="cash">
+					<h3 class="subheader">
+						<a name="income" href="#income">Income</a>
+					</h3>
+					<div class="js-cash"></div>
+					<div class="js-total section-total"></div>
+				</div>
+
+				<div class="payments financial" data-model="debt" data-object="credit_cards">
+					<h3 class="subheader">
+						<a name="debt" href="#debt">Oustanding Debt</a>
+					</h3>
+					<div class="credit_cards">
+						<div class="js-debt"></div>
+						<div class="js-total section-total"></div>
+					</div>
+				</div>
+
+				<div class="pay financial" data-model="to_pay" data-object="credit_cards">
+					<h3 class="subheader">
+						<a name="pay" href="#pay">Pay At Least</a>
+					</h3>
+					<div class="js-to_pay pay"></div>
+					<div class="js-total section-total"></div>
+				</div>
+
+				<div class="financial" data-model="notes">
+					<h3 class="subheader">
+						<a name="notes" href="#notes">Notes</a>
+						<i class="fa fa-plus-circle js-new-note"></i>
+					</h3>
+					<div class="js-notes notes"></div>
+				</div>
+			</div>
+			<div class="small-5 columns">
+				<div class="panel callout radius overview js-overview">
+					<h4>Overview</h4>
+					<div class="js-info">
+						Today is <span class="js-date"></span>
+					</div>
+					<div class="js-difference">
+						Remaining : <span class="js-short numerical"></span>
+					</div>
+					<div class="js-leftToPay">
+						Left To Pay: <span class="js-left numerical to-pay"></span>
+					</div>
+				</div>
+			</div>
+
+		</main>
+
+		<script src="assets/js/app.js"></script>
+	</body>
+</html>

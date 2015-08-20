@@ -1,0 +1,11 @@
+---
+- name: Deploys the finances site
+  hosts: finances
+  sudo: no
+  vars:
+    site_name: finances
+    git_branch: master
+    webroot: "{{ webroot_base }}/{{ site_name }}"
+
+  roles:
+    - finances

@@ -1,0 +1,182 @@
+@import "../../../node_modules/foundation-sites/css/foundation.min.css";
+@import "../../../node_modules/font-awesome/css/font-awesome.min.css";
+@import "../../../node_modules/sweetalert/dist/sweetalert.css";
+
+main {
+    padding: 50px;
+}
+.top-bar .name h1.nav {
+    color:white;
+    font-size:36px;
+    padding-left: 10px;
+}
+
+
+input.text-input {
+    width : 70px;
+    height : 30px;
+    display: inline-block;
+}
+.notes input.text-input {
+    width : 525px;
+}
+
+ul.middle {
+    margin-right : 125px;
+}
+/* Icons */
+i {
+    cursor : pointer;
+}
+
+.fa-check-circle{
+    color:blue;
+}
+
+.fa-minus {
+    padding-right: 5px;
+    color : lightblue;
+}
+
+.fa-plus {
+    color: lightcoral;
+    padding-left: 5px;
+}
+.fa-plus.inactive {
+    color : white;
+}
+
+.fa-refresh {
+    color: white;
+    padding-top:13px;
+    padding-left:4px;
+}
+
+.fa-plus-circle {
+    font-size: 18px;
+}
+
+.fa-trash-o {
+    padding-left:10px;
+    color : red;
+}
+
+.fa-pencil-square-o {
+    color : blue;
+}
+
+.fa-money {
+    color:green;
+}
+
+h3.subheader a{
+    padding-top: 50px;
+}
+
+.numerical {
+    font-weight: bold;
+}
+
+.panel.callout.overview {
+    position: fixed;
+    top: 50px;
+    width: 400px;
+    display:block;
+}
+
+.financial {
+    padding-top: 20px;
+}
+
+.payments .numerical, .numerical.negative,
+.income .numerical.negative, .numerical.minus {
+    color: red;
+}
+.income .numerical {
+    color: blue;
+}
+
+.numerical.to-pay {
+    color : blue;
+}
+
+nav .numerical.positive {
+    color: lightblue;
+}
+
+nav .numerical.negative {
+    color: #FF3333;
+}
+
+.numerical.plus {
+    color: green;
+}
+
+.ring .checkbox {
+    margin-left: 8px;
+}
+
+ul .check {
+    margin-left: 10px;
+}
+
+.section {
+    font-weight : bold;
+}
+
+.section-total {
+    font-size: 18px;
+    border-top: 1px black solid;
+    width: 300px;
+}
+.mobile {
+    display:none;
+}
+
+@media only screen and (max-width: 995px){
+    ul.middle {
+        margin-right:25px;
+    }
+    .name-header {
+        display:none;
+    }
+    .refresh {
+        padding-left:10px;
+    }
+}
+
+@media only screen and (max-width: 320px){
+    main {
+        padding: 0;
+        padding-top:30px;
+    }
+    .panel.callout.overview {
+        display:none;
+    }
+    .top-bar .name {
+        display:inline-block;
+    }
+    .top-bar .name h1.nav {
+        width: 50px;
+    }
+    li.mobile {
+        display:inline-block;
+        font-size:24px;
+        padding-left:50px;
+        top:-5px;
+        position:relative;
+    }
+    .mobile.m-overview {
+        position: fixed;
+        z-index:1;
+        padding-top:20px;
+        padding-bottom:5px;
+        background-color: #ecfaff;
+        border: #d8d8d8 1px solid;
+    }
+    .mobile.m-overview .dropdown {
+        display: inline;
+        padding:15px;
+        font-size: 13px;
+    }
+}

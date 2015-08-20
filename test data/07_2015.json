@@ -1,0 +1,64 @@
+{
+    "debt": {
+        "remote": false,
+        "due_dates": {
+            "remote": true,
+            "file": "due_dates/07_2015.json"
+        },
+        "credit_cards": {
+            "amex": {
+                "cash": "10.30",
+                "sky": "576.01",
+                "points": "77.68"
+            },
+            "visa": {
+                "slate": "3475.08",
+                "freedom": "0",
+                "bofa": "3057.49"
+            },
+            "mc": {
+                "citi": "0",
+                "sallie": "148.93"
+            },
+            "discover": {
+                "more": 0,
+                "chrome": "1162.78"
+            }
+        }
+    },
+    "cash": {
+        "remote": true,
+        "file": "cash/07_2015.json"
+    },
+    "to_pay": {
+        "remote": false,
+        "credit_cards": {
+            "amex": {
+                "cash": "10.30",
+                "sky": "578.74",
+                "points": "77.68"
+            },
+            "visa": {
+                "slate": "335",
+                "freedom": "0",
+                "bofa": "520"
+            },
+            "mc": {
+                "citi": "0",
+                "sallie": "148.93"
+            },
+            "discover": {
+                "more": "0",
+                "chrome": "261"
+            }
+        },
+        "links": {
+            "remote": true,
+            "file": "links/04_2015.json"
+        }
+    },
+    "notes": {
+        "remote": true,
+        "file": "notes/07_2015.json"
+    }
+}

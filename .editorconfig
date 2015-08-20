@@ -1,0 +1,26 @@
+root = true
+
+[*]
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[**.{html,jade}]
+indent_style = tab
+
+[**.java]
+indent_style = space
+indent_size = 4
+
+[**.scss]
+indent_syle = tab
+indent_size = 4
+
+[**.coffee]
+indent_size = 2
+
+[**.scala]
+# http://docs.scala-lang.org/style/indentation.html
+indent_size = 2
