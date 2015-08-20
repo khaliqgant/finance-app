@@ -16,16 +16,16 @@
 
 'use strict';
 
-var $           = require('jquery');
-var _           = require('underscore');
-var Backbone    = require('backbone');
-var server      = require('./server');
-var vars        = require('./vars');
-var moment      = require('moment');
-var sweetAlert  = require('sweetalert');
-var enquire     = require('enquire.js');
-var bunyan      = require('bunyan');
-var TapListener = require('tap-listener');
+var $          = require('jquery');
+var _          = require('underscore');
+var Backbone   = require('backbone');
+var server     = require('./server');
+var vars       = require('./vars');
+var draggable  = require('./draggable');
+var moment     = require('moment');
+var sweetAlert = require('sweetalert');
+var enquire    = require('enquire.js');
+var bunyan     = require('bunyan');
 
 var Finances = (function(){
     var debug = false;
@@ -33,7 +33,6 @@ var Finances = (function(){
 
     var app = {
         date : vars.date,
-        mobile : false,
         current : null,
         money : null,
         financials : 0,
@@ -42,7 +41,7 @@ var Finances = (function(){
         debt : 0,
         toPay : 0,
         ring : 0,
-        sections : ['debt','cash', 'to_pay', 'notes', 'links']
+        sections : ['debt','cash', 'to_pay', 'notes']
     };
 
     /**
@@ -107,7 +106,6 @@ var Finances = (function(){
             app.money = Money;
 
             server.nextMonthCheck(app.date);
-            server.previousMonthCheck(app.date);
         },
 
         reset : function(callback) {
@@ -123,16 +121,6 @@ var Finances = (function(){
             if (typeof(callback) === 'function') {
                 callback(true);
             }
-        },
-
-        /**
-         * Refresh
-         * @use restart the app with an reset then init call
-         */
-        refresh : function() {
-            methods.reset(function(done){
-                methods.init();
-            });
         },
 
         renderHandler : function(val) {
@@ -507,10 +495,7 @@ var Finances = (function(){
             income : function() {
                 // get total
                 var gross = $('.income .gross .numerical').attr('data-value');
-                var misc = $(vars.income.misc).parent('ul').find('.numerical')
-                    .attr('data-value');
-                var total = parseFloat(gross) +  parseFloat(gross) +
-                            parseFloat(misc);
+                var total = parseFloat(gross) +  parseFloat(gross);
                 // only append once
                 if ($('.income .gross .total').length === 0) {
                     $('.income .gross').append(
@@ -709,17 +694,27 @@ var Finances = (function(){
 
                 // make a new file
                 if ($(this).hasClass('inactive')){
-                    var data = {
-                        lastMonth : $(this).attr('data-lastMonth'),
-                        file : $(this).attr('data-url'),
-                        rawDate : $(this).attr('data-rawDate'),
-                        rawDateLast : last
-                    };
-                    server.newMonth(data,function(done){
-                        methods.reset(function(){
-                            methods.init();
+                    // don't allow some random user to make too many new months
+                    if (vars.monthCount < 2) {
+                        var data = {
+                            lastMonth : $(this).attr('data-lastMonth'),
+                            file : $(this).attr('data-url'),
+                            rawDate : $(this).attr('data-rawDate'),
+                            rawDateLast : last
+                        };
+                        server.newMonth(data,function(done){
+                            methods.reset(function(){
+                                methods.init();
+                            });
                         });
-                    });
+                    } else {
+                        vars.monthCount--;
+                        month = moment()
+                        .add(vars.monthCount,'months').format('MMMM');
+                            methods.updateMonth(month);
+                        app.date = moment()
+                            .add(vars.monthCount,'months').format('MM_YYYY');
+                    }
 
                 } else {
                     methods.reset(function(done){
@@ -752,30 +747,16 @@ var Finances = (function(){
             });
 
             /**
-             * Refresh
-             * @use refresh the app by clicking the refresh button
-             */
-            $(document).on('click', vars.refresh, function(e){
-                methods.refresh();
-            });
-
-            /**
              * Remove
              * @use action on trash can delete icon
              */
             $(document).on('click', vars.remove, function(e){
-                var content;
-                if (app.mobile) {
-                    content = 'Delete this note?';
-                } else {
-                    var note = $(this).parent('li').text();
-                    content = 'You sure you want to delete this note <br/>"' +
-                        note + '"';
-                }
+                var content = $(this).parent('li').text();
                 var self = this;
                 sweetAlert({
                     title: 'Delete Note',
-                    text: content,
+                    text: 'You sure you want to delete this note <br/>"' +
+                        content + '"' ,
                     type: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#DD6B55',
@@ -825,16 +806,6 @@ var Finances = (function(){
                 $(this).parents('.circle').find(vars.noteInput).focus();
             });
 
-            /**
-             * Hide overview box if clicked/tap
-             */
-            var el = document.getElementsByClassName(
-                Finances.vars.overviewBoxClass)[0];
-            var tapper = new TapListener(el);
-            tapper.on('tap',function(e){
-                listeners.methods.overviewHide(el);
-            });
-
             // immediately invoked
             methods.updateMonth();
 
@@ -846,10 +817,11 @@ var Finances = (function(){
                     $(document).on('click', vars.dropdown.listener, function(){
                         $(vars.dropdown.el).toggle();
                     });
-                    app.mobile = true;
                 },
 
             });
+            //KJG
+            //draggable.init();
         }, // end init function
 
         methods : {
@@ -966,22 +938,7 @@ var Finances = (function(){
                         }
                     );
                 }
-            }, // end inputHandler
-
-            /**
-             * OverviewHide
-             * @use show or hide the overview box on tap or click
-             */
-            overviewHide : function(el) {
-                if ($(el).hasClass('thrown')) {
-                    $(el).css('left', 'initial');
-                    $(el).removeClass('thrown');
-                } else {
-                    var width = $(window).width();
-                    $(el).css('left', width - 20);
-                    $(el).addClass('thrown');
-                }
-            }, //end overviewHide
+            }
         },// end methods object within listeners
     }; // end listeners object
 

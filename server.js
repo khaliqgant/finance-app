@@ -7,17 +7,11 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var fs = require('fs');
-var auth = require('http-auth');
-var basic = auth.basic({
-    realm: 'Khaliq\'s Finances',
-    file: __dirname + '/auth/.htpasswd'
-});
 
 var routes = require('./routes/index');
 var users = require('./routes/users');
 
 var app = express();
-app.use(auth.connect(basic));
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -244,7 +238,7 @@ app.get('/', function (req, res) {
   res.send('Hello World!');
 });
 
-var server = app.listen(3000, function () {
+var server = app.listen(4000, function () {
 
   var host = server.address().address;
   var port = server.address().port;

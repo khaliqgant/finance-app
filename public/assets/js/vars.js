@@ -29,7 +29,6 @@ var Vars = {
     fixed_costs : '.js-fixed_costs',
     income : {
         header : '.js-income',
-        misc : '.js-misc_income',
         section : '.income .js-total'
     },
     payments : {
@@ -59,9 +58,6 @@ var Vars = {
         listener :'.js-dropdown-activate',
         el :'.js-dropdown',
     },
-    refresh : '.js-refresh',
-    overviewBoxClass :'js-overview',
-    overviewBox :'.js-overview',
 };
 
 module.exports = Vars;

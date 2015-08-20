@@ -749,12 +749,6 @@ i {
     color : white;
 }
 
-.fa-refresh {
-    color: white;
-    padding-top:13px;
-    padding-left:4px;
-}
-
 .fa-plus-circle {
     font-size: 18px;
 }
@@ -834,18 +828,6 @@ ul .check {
 }
 .mobile {
     display:none;
-}
-
-@media only screen and (max-width: 995px){
-    ul.middle {
-        margin-right:25px;
-    }
-    .name-header {
-        display:none;
-    }
-    .refresh {
-        padding-left:10px;
-    }
 }
 
 @media only screen and (max-width: 320px){

@@ -109,37 +109,6 @@ var Server = {
     },
 
 
-    /**
-     * Previous Month Check
-     * @use run a check if the previous month exists and hide it if it doesn't
-     */
-    previousMonthCheck : function(date) {
-        var lastMonth = moment(date,'MM_YYYY')
-            .subtract(1, 'months').format('MM_YYYY');
-        var url = 'data/' + lastMonth + '.json';
-        var exists = true;
-
-        $.ajax({
-            type: 'HEAD',
-            url: 'data/' + lastMonth + '.json',
-            success: function(data,textStatus,jqXHR){
-                // proceed
-            },
-            error : function(jqXHR, textStatus, errorThrown) {
-                if (jqXHR.status === 404) {
-                    exists = false;
-                }
-            },
-            complete : function(jqXHR,textStatus) {
-                if (!exists) {
-                    $(vars.decreaseMonth).hide();
-                } else {
-                    $(vars.decreaseMonth).show();
-                }
-            },
-        });
-
-    },
 
     /**
      * New Month
