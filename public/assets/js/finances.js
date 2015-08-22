@@ -239,18 +239,24 @@ var Finances = (function(){
             if (debug) {
                 log.trace('The item is: ');
                 log.debug(item.value);
-                console.log(item.value);
                 if (!item.value.hasOwnProperty('next_month')) {
                     log.warn('this element doesn\'t have a next month');
                 }
             }
+
             if (item.value.hasOwnProperty('next_month')) {
                 var month = item.value.next_month ?
                     moment(app.date,'MM_YYYY').month() + 2 :
                     moment(app.date,'MM_YYYY').format('M');
                 var date = month + '/' + item.value.date;
+                var dueOrClosing = !item.value.hasOwnProperty('paid') ?
+                    'Closing Date' : '<strong>Due Date</strong>';
+                // make due date bold for the date as well
+                if (item.value.hasOwnProperty('paid')) {
+                    date = '<strong>'+ date + '</strong>';
+                }
                 $(vars[val]).find(item.keyClass)
-                    .append(' (Due Date : ' + date + ')');
+                    .append(' (' + dueOrClosing + ' : ' + date + ')');
             } else {
                 if (debug) {
                     log.warn('this element is missing a next month prop');
