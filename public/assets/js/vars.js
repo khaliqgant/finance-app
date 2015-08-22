@@ -16,6 +16,7 @@ var Vars = {
     debt : '.js-debt',
     to_pay : '.js-to_pay',
     due_dates : '.js-to_pay',
+    closing_dates : '.js-to_pay',
     links : '.js-to_pay',
     notes : '.js-notes',
     remove : '.js-remove',
