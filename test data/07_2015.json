@@ -5,6 +5,10 @@
             "remote": true,
             "file": "due_dates/07_2015.json"
         },
+        "closing_dates": {
+            "remote": true,
+            "file": "closing_dates/07_2015.json"
+        },
         "credit_cards": {
             "amex": {
                 "cash": "10.30",
