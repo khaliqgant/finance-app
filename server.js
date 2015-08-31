@@ -17,6 +17,7 @@ var routes = require('./routes/index');
 var users = require('./routes/users');
 
 var app = express();
+var trends = require('./analysis/trends');
 app.use(auth.connect(basic));
 
 // view engine setup
@@ -205,6 +206,14 @@ app.post('/new', function(req,res){
     fs.writeFileSync(files.cash.next.file, cashDateContent);
     fs.writeFileSync(files.notes.next.file, notesDateContent);
 
+    res.json(true);
+});
+
+
+app.post('/pay-average', function(req,res){
+    console.log(req.start);
+    console.log('pay average called');
+    trends.toPay(req,res);
     res.json(true);
 });
 

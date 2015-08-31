@@ -142,6 +142,29 @@ var Server = {
     },
 
     /**
+     * Generic
+     * @use utility ajax post call
+     */
+    generic : function(data,endpoint,callback) {
+        $.ajax({
+            type: 'POST',
+            url: endpoint,
+            data: data,
+            success: function(data,textStatus,jqXHR){
+                // nada
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                console.log('whoops!');
+            },
+            dataType: 'json'
+        }).done(function(){
+            if (callback === 'function') {
+                callback(true);
+            }
+        });
+    },
+
+    /**
      * New Month
      * @use makes post request to add a new month data file
      */

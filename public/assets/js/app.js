@@ -18684,6 +18684,29 @@ var Server = {
     },
 
     /**
+     * Generic
+     * @use utility ajax post call
+     */
+    generic : function(data,endpoint,callback) {
+        $.ajax({
+            type: 'POST',
+            url: endpoint,
+            data: data,
+            success: function(data,textStatus,jqXHR){
+                // nada
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                console.log('whoops!');
+            },
+            dataType: 'json'
+        }).done(function(){
+            if (callback === 'function') {
+                callback(true);
+            }
+        });
+    },
+
+    /**
      * New Month
      * @use makes post request to add a new month data file
      */
@@ -18848,6 +18871,7 @@ var Vars = {
     },
     refresh : '.js-refresh',
     overviewBoxClass :'js-overview',
+    trendBoxClass :'js-trends',
     overviewBox :'.js-overview',
 };
 
@@ -22031,6 +22055,7 @@ var Finances = (function(){
                     methods.calculations.init();
                     methods.updateOverview();
                     methods.addNotePluses();
+                    methods.computeTrends();
                 }
             });
 
@@ -22409,6 +22434,22 @@ var Finances = (function(){
             });
         },
 
+        /**
+         * Compute Trends
+         * @use calculate trends and append to the trend box
+         */
+        computeTrends : function() {
+            // kjg
+            // running average of "to pay at least" for the last 12 months
+            var startDate = moment().subtract(12, 'months').format('MM_YYYY');
+            var endDate = app.date;
+            var data = {start : startDate, end : endDate};
+            server.generic(data, 'pay-average', function(result){
+                console.log(result);
+            });
+
+        },
+
         updateOverview : function() {
             // find the diff
             var difference = app.income - app.toPay;
@@ -22779,14 +22820,22 @@ var Finances = (function(){
             });
 
             /**
-             * Hide overview box if clicked/tap
+             * Hide overview and trend box if clicked/tap
              */
-            var el = document.getElementsByClassName(
+            var financeEl = document.getElementsByClassName(
                 Finances.vars.overviewBoxClass)[0];
-            var tapper = new TapListener(el);
-            tapper.on('tap',function(e){
-                listeners.methods.overviewHide(el);
+            var tapperF = new TapListener(financeEl);
+            tapperF.on('tap',function(e){
+                listeners.methods.overviewHide(financeEl);
             });
+
+            var trendEl = document.getElementsByClassName(
+                Finances.vars.trendBoxClass)[0];
+            var tapperE = new TapListener(trendEl);
+            tapperE.on('tap',function(e){
+                listeners.methods.overviewHide(trendEl);
+            });
+
 
             // immediately invoked
             methods.updateMonth();

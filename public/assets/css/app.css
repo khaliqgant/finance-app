@@ -786,6 +786,13 @@ h3.subheader a{
     width: 400px;
     display:block;
 }
+.panel.callout.trends{
+    position: fixed;
+    top: 225px;
+    width: 400px;
+    display:block;
+    background-color: lightgreen;
+}
 
 .financial {
     padding-top: 20px;

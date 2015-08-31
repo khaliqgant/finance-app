@@ -62,6 +62,7 @@ var Vars = {
     },
     refresh : '.js-refresh',
     overviewBoxClass :'js-overview',
+    trendBoxClass :'js-trends',
     overviewBox :'.js-overview',
 };
 
