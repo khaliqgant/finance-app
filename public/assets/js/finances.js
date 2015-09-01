@@ -470,10 +470,7 @@ var Finances = (function(){
         computeTrends : function() {
             // kjg
             // running average of "to pay at least" for the last 12 months
-            var startDate = moment().subtract(12, 'months').format('MM_YYYY');
-            var endDate = app.date;
-            var data = {start : startDate, end : endDate};
-            server.generic(data, 'pay-average', function(result){
+            server.generic(undefined, 'pay-average', function(result){
                 console.log(result);
             });
 

@@ -211,10 +211,9 @@ app.post('/new', function(req,res){
 
 
 app.post('/pay-average', function(req,res){
-    console.log(req.start);
-    console.log('pay average called');
-    trends.toPay(req,res);
-    res.json(true);
+    trends.toPay(function(response){
+        res.json(response);
+    });
 });
 
 // catch 404 and forward to error handler
