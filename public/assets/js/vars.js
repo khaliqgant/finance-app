@@ -66,7 +66,7 @@ var Vars = {
     overviewBox :'.js-overview',
     historical : '.js-historical',
     toPayAvg : '.js-toPay-average',
-    difference : '.js-difference',
+    difference : '.js-diff',
 };
 
 module.exports = Vars;
