@@ -157,9 +157,10 @@ var Server = {
                 console.log('whoops!');
             },
             dataType: 'json'
-        }).done(function(){
-            if (callback === 'function') {
-                callback(true);
+        }).done(function(result){
+            if (typeof callback === 'function') {
+                var val = result !== undefined ? result : true;
+                callback(val);
             }
         });
     },
@@ -181,7 +182,7 @@ var Server = {
             },
             dataType: 'json'
         }).done(function(){
-            if (callback === 'function') {
+            if (typeof callback === 'function') {
                 callback(true);
             }
         });

@@ -64,6 +64,8 @@ var Vars = {
     overviewBoxClass :'js-overview',
     trendBoxClass :'js-trends',
     overviewBox :'.js-overview',
+    historical : '.js-historical',
+    toPayAvg : '.js-toPay-average',
 };
 
 module.exports = Vars;

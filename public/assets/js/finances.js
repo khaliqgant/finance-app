@@ -109,6 +109,7 @@ var Finances = (function(){
 
             server.nextMonthCheck(app.date);
             server.previousMonthCheck(app.date);
+            methods.computeTrends();
         },
 
         reset : function(callback) {
@@ -468,10 +469,9 @@ var Finances = (function(){
          * @use calculate trends and append to the trend box
          */
         computeTrends : function() {
-            // kjg
             // running average of "to pay at least" for the last 12 months
             server.generic(undefined, 'pay-average', function(result){
-                console.log(result);
+                $(vars.toPayAvg).text('$' + result.toFixed(2));
             });
 
         },

@@ -18699,9 +18699,10 @@ var Server = {
                 console.log('whoops!');
             },
             dataType: 'json'
-        }).done(function(){
-            if (callback === 'function') {
-                callback(true);
+        }).done(function(result){
+            if (typeof callback === 'function') {
+                var val = result !== undefined ? result : true;
+                callback(val);
             }
         });
     },
@@ -18723,7 +18724,7 @@ var Server = {
             },
             dataType: 'json'
         }).done(function(){
-            if (callback === 'function') {
+            if (typeof callback === 'function') {
                 callback(true);
             }
         });
@@ -18873,6 +18874,8 @@ var Vars = {
     overviewBoxClass :'js-overview',
     trendBoxClass :'js-trends',
     overviewBox :'.js-overview',
+    historical : '.js-historical',
+    toPayAvg : '.js-toPay-average',
 };
 
 module.exports = Vars;
@@ -22080,6 +22083,7 @@ var Finances = (function(){
 
             server.nextMonthCheck(app.date);
             server.previousMonthCheck(app.date);
+            methods.computeTrends();
         },
 
         reset : function(callback) {
@@ -22439,10 +22443,9 @@ var Finances = (function(){
          * @use calculate trends and append to the trend box
          */
         computeTrends : function() {
-            // kjg
             // running average of "to pay at least" for the last 12 months
             server.generic(undefined, 'pay-average', function(result){
-                console.log(result);
+                $(vars.toPayAvg).text('$' + result.toFixed(2));
             });
 
         },
@@ -22499,7 +22502,10 @@ var Finances = (function(){
                 // get total
                 var gross = $('.income .gross .numerical').attr('data-value');
                 var misc = $(vars.income.misc).parent('ul').find('.numerical')
-                    .attr('data-value');
+                    .attr('data-value') ?
+                        $(vars.income.misc).parent('ul').find('.numerical')
+                    .attr('data-value') :
+                        0;
                 var total = parseFloat(gross) +  parseFloat(gross) +
                             parseFloat(misc);
                 // only append once
