@@ -528,7 +528,10 @@ var Finances = (function(){
                 // get total
                 var gross = $('.income .gross .numerical').attr('data-value');
                 var misc = $(vars.income.misc).parent('ul').find('.numerical')
-                    .attr('data-value');
+                    .attr('data-value') ?
+                        $(vars.income.misc).parent('ul').find('.numerical')
+                    .attr('data-value') :
+                        0;
                 var total = parseFloat(gross) +  parseFloat(gross) +
                             parseFloat(misc);
                 // only append once
