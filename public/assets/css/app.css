@@ -791,7 +791,7 @@ h3.subheader a{
     top: 225px;
     width: 400px;
     display:block;
-    background-color: lightgreen;
+    background-color: #CCFFCC;
 }
 
 .financial {
@@ -820,6 +820,10 @@ nav .numerical.negative {
 
 .numerical.plus {
     color: green;
+}
+
+.numerical.average {
+    color: grey;
 }
 
 .ring .checkbox {

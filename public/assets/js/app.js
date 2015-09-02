@@ -18876,6 +18876,7 @@ var Vars = {
     overviewBox :'.js-overview',
     historical : '.js-historical',
     toPayAvg : '.js-toPay-average',
+    difference : '.js-difference',
 };
 
 module.exports = Vars;
@@ -22444,7 +22445,13 @@ var Finances = (function(){
         computeTrends : function() {
             // running average of "to pay at least" for the last 12 months
             server.generic(undefined, 'average', function(result){
+                Finances.app.average = app.average = result.toFixed(2);
                 $(vars.toPayAvg).text('$' + result.toFixed(2));
+                var diff = (app.toPay - app.average).toFixed(2);
+                var posOrNeg = diff > 0 ? '+' : '-';
+                var diffClass = diff < 0 ? 'positive' : 'negative';
+                $(vars.difference).text('('+posOrNeg + diff+')')
+                .addClass(diffClass);
             });
 
         },
