@@ -22448,9 +22448,10 @@ var Finances = (function(){
                 Finances.app.average = app.average = result.toFixed(2);
                 $(vars.toPayAvg).text('$' + result.toFixed(2));
                 var diff = (app.toPay - app.average).toFixed(2);
-                var posOrNeg = diff > 0 ? '+' : '-';
-                var diffClass = diff < 0 ? 'positive' : 'negative';
-                $(vars.difference).text('('+posOrNeg + diff+')')
+                var posOrNeg = diff > 0 ? '+' : '';
+                var diffClass = diff < 0 ? 'plus' : 'negative';
+                $(vars.difference).removeClass('plus negative');
+                $(vars.difference).html('('+posOrNeg + diff+')')
                 .addClass(diffClass);
             });
 
