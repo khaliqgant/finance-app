@@ -210,7 +210,7 @@ app.post('/new', function(req,res){
 });
 
 
-app.post('/pay-average', function(req,res){
+app.post('/average', function(req,res){
     trends.toPay(function(response){
         res.json(response);
     });

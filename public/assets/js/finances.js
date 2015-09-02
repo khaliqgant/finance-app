@@ -469,7 +469,7 @@ var Finances = (function(){
          */
         computeTrends : function() {
             // running average of "to pay at least" for the last 12 months
-            server.generic(undefined, 'pay-average', function(result){
+            server.generic(undefined, 'average', function(result){
                 $(vars.toPayAvg).text('$' + result.toFixed(2));
             });
 
