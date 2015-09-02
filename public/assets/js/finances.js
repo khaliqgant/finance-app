@@ -109,7 +109,6 @@ var Finances = (function(){
 
             server.nextMonthCheck(app.date);
             server.previousMonthCheck(app.date);
-            methods.computeTrends();
         },
 
         reset : function(callback) {
