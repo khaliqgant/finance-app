@@ -45,6 +45,11 @@ months data into new files so you can forecast payments as well.
 nodemon server.js
 ```
 * App can be accessed from http://localhost:3000/
+* In production I use [forever](https://github.com/foreverjs/forever) to launch the app and run in the background
+```
+forever start -c nodemon server.js
+```
+
 * There is a basic auth in [place](https://github.com/khaliqgant/finance-app/blob/master/server.js#L11)
 so you'll need to create an auth directory and a .htpasswd file with some creds.
 You can generate such a file [here](http://www.htaccesstools.com/htpasswd-generator/)
