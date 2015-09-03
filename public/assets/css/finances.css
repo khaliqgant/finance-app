@@ -161,7 +161,7 @@ ul .check {
         padding: 0;
         padding-top:30px;
     }
-    .panel.callout.overview {
+    .panel.callout.overview, .panel.callout.trends {
         display:none;
     }
     .top-bar .name {
