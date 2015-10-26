@@ -299,7 +299,7 @@ var Finances = (function(){
                 var content = $(vars[val]).find(item.keyClass).html();
                 $(vars[val]).find(item.keyClass).replaceWith(
                     '<a target="_blank" href="'+item.value.link+'">' +
-                        content +
+                        titleCase(content.strip()) +
                     '</a>'
                 );
             }
@@ -1028,6 +1028,11 @@ var Finances = (function(){
     String.prototype.strip = function(){
         return this.replace('_',' ');
     };
+
+    // http://stackoverflow.com/questions/4878756/javascript-how-to-capitalize-first-letter-of-each-word-like-a-2-word-city
+    function titleCase(str) {
+        return str.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
+    }
 
     var API = {
         app : app,
