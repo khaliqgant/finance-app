@@ -259,8 +259,11 @@ var Finances = (function(){
 
             if (item.value.hasOwnProperty('next_month')) {
                 var month = item.value.next_month ?
-                    moment(app.date,'MM_YYYY').month() + 2 :
-                    moment(app.date,'MM_YYYY').format('M');
+                    moment(app.date, 'MM_YYYY').month() + 2 :
+                    moment(app.date, 'MM_YYYY').format('M');
+                if (month > 12) {
+                    month = 1;
+                }
                 var date = month + '/' + item.value.date;
                 var dueOrClosing = !item.value.hasOwnProperty('paid') ?
                     'Closing Date' : '<strong>Due Date</strong>';
