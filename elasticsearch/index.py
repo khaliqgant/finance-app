@@ -27,6 +27,37 @@ def create_index():
     except (RuntimeError, TypeError, NameError):
         pass
 
+# """ Iterate through to pay data to upload to es """
+def upload_data():
+    path = "../data"
+    key_name = "to_pay"
+
+    data_files = [f for f in listdir(path) if isfile(join(path, f))]
+    # grab all the data files, they should start with a number
+    for data in data_files:
+        if (data[0].isdigit()):
+            data_file = path + "/" + data
+            with open(data_file, 'r') as f:
+                dat = json.load(f)
+                to_pay = dat[key_name]["credit_cards"]
+                compiled = {}
+                for card_type, arr in to_pay.iteritems():
+                    # set dict for the type of card
+                    compiled[card_type] = {}
+                    for card, amount in arr.iteritems():
+                        # parse out the amount as a float
+                        compiled[card_type][card] = float(amount)
+            # turn back into json string
+            body = json.dumps(compiled)
+            url = tornado.options.options.es_url + "/" + tornado.options.options.index_name + "/" + key_name + "/" + data
+            request = HTTPRequest(url, method="PUT", body=body, request_timeout=240)
+            response = http_client.fetch(request)
+            result = json.loads(response.body)
+            if "errors" in result:
+                print("upload failed for " + data)
+                print(result["errors"])
+
+
 if __name__ == '__main__':
     tornado.options.define("es_url", type=str, default=DEFAULT_ES_URL,
                            help="URL of your Elasticsearch node")
