@@ -23,11 +23,12 @@ def create_index():
     try:
         request = HTTPRequest(url, method="PUT", body=body, request_timeout=240)
         response = http_client.fetch(request)
-        logging.info('Create index done   %s' % response.body)
+        logging.info('Create index done %s' % response.body)
     except (RuntimeError, TypeError, NameError):
         pass
 
-# """ Iterate through to pay data to upload to es """
+
+""" Iterate through to pay data to upload to es """
 def upload_data():
     path = "../data"
     key_name = "to_pay"
@@ -56,6 +57,8 @@ def upload_data():
             if "errors" in result:
                 print("upload failed for " + data)
                 print(result["errors"])
+            else:
+                logging.info('Uploaded data file %s' % data)
 
 
 if __name__ == '__main__':
@@ -68,6 +71,12 @@ if __name__ == '__main__':
     tornado.options.define("num_of_shards", type=int, default=2,
                            help="Number of shards for ES index")
 
-    # create_index()
+    tornado.options.define("init", type=bool, default=False,
+                           help="Upload schema data to es")
+
+    tornado.options.parse_command_line()
+
+    if (tornado.options.options.init):
+        create_index()
     upload_data()
 
