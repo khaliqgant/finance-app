@@ -6,3 +6,5 @@ auth/*
 /elasticsearch/venv/
 *.pyc
 /elasticsearch/schema.json
+/elasticsearch/schema.json
+/analysis/data/*
