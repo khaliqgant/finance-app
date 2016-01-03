@@ -1,4 +1,5 @@
 import logging
+import json
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
 from elasticsearch_dsl.connections import connections
@@ -14,17 +15,27 @@ def run_aggregations():
     s = Search(using=client, index="finances")
 
     structure = files.cc_structure()
+
+    # store averages in a dict
+    averages = {}
     for card_type, arr in structure.iteritems():
+        averages[card_type] = {}
         for card, amount in arr.iteritems():
             s.aggs.bucket('cc_average', 'nested', path=card_type)\
                 .metric('average', 'avg', field=card_type + "." + card)
-            # print(s.to_dict())
             response = s.execute()
             if response.success():
-                aggs = response.aggregations
-                print(response.aggregations)
+                average = response.aggregations.cc_average.average.value
+                averages[card_type][card] = "%.2f" % average
             else:
-                logging.info('aggregations failed %s', response.to_dict())
+                print('aggregations failed %s', response.to_dict())
+
+    # write this json to a file now
+    path = "../analysis/data/"
+    averages_file = path + "averages.json"
+    with open(averages_file, 'w') as output_file:
+        json.dump(averages, output_file)
+        print "aggregations written to ", averages_file
 
 
 if __name__ == '__main__':
