@@ -1,0 +1,4 @@
+tornado
+chardet
+elasticsearch
+elasticsearch_dsl
