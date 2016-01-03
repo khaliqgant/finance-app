@@ -5,3 +5,4 @@ nohup.out
 auth/*
 /elasticsearch/venv/
 *.pyc
+/elasticsearch/schema.json

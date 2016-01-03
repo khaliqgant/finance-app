@@ -1,0 +1,43 @@
+{
+    "mappings": {
+        "to_pay": {
+            "properties": {
+                "amex": {
+                    "type": "nested",
+                    "properties": {
+                        "cash": {
+                            "type": "float"
+                        }
+                    }
+                },
+                "discover": {
+                    "type": "nested",
+                    "properties": {
+                        "more": {
+                            "type": "float"
+                        }
+                    }
+                },
+                "mc": {
+                    "type": "nested",
+                    "properties": {
+                        "citi": {
+                            "type": "float"
+                        }
+                    },
+                    "visa": {
+                        "type": "nested",
+                        "properties": {
+                            "freedom": {
+                                "type": "float"
+                            },
+                            "slate": {
+                                "type": "float"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
