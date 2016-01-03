@@ -20397,9 +20397,14 @@ var Finances = (function(){
                 var diffClass = diff < 0 ? 'plus' : 'negative';
                 $(vars.difference).removeClass('plus negative');
                 $(vars.difference).html('('+posOrNeg + diff+')')
-                .addClass(diffClass);
+                    .addClass(diffClass);
             });
 
+            // grab the average of each card
+            server.grab('data/analysis/averages.json', function(result){
+                // do something with this result TODO @KJG
+                console.log(result);
+            });
         },
 
         updateOverview : function() {
@@ -21119,7 +21124,7 @@ var Server = {
 
     /**
      * Generic
-     * @use utility ajax post call
+     * @use utility ajax POST call
      */
     generic : function(data,endpoint,callback) {
         $.ajax({
@@ -21137,6 +21142,27 @@ var Server = {
             if (typeof callback === 'function') {
                 var val = result !== undefined ? result : true;
                 callback(val);
+            }
+        });
+    },
+
+    /**
+     * Grab
+     * @use utility ajax GET request
+     */
+    grab : function(endpoint, callback) {
+        $.ajax({
+            type: 'GET',
+            url: endpoint,
+            success: function(data, textStatus, jqXHR) {
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                console.log('whoops!');
+            },
+            dataType: 'json'
+        }).done(function(result){
+            if (typeof callback === 'function') {
+                callback(result);
             }
         });
     },

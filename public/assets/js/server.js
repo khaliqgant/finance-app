@@ -143,7 +143,7 @@ var Server = {
 
     /**
      * Generic
-     * @use utility ajax post call
+     * @use utility ajax POST call
      */
     generic : function(data,endpoint,callback) {
         $.ajax({
@@ -161,6 +161,27 @@ var Server = {
             if (typeof callback === 'function') {
                 var val = result !== undefined ? result : true;
                 callback(val);
+            }
+        });
+    },
+
+    /**
+     * Grab
+     * @use utility ajax GET request
+     */
+    grab : function(endpoint, callback) {
+        $.ajax({
+            type: 'GET',
+            url: endpoint,
+            success: function(data, textStatus, jqXHR) {
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                console.log('whoops!');
+            },
+            dataType: 'json'
+        }).done(function(result){
+            if (typeof callback === 'function') {
+                callback(result);
             }
         });
     },

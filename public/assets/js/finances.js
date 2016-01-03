@@ -480,9 +480,14 @@ var Finances = (function(){
                 var diffClass = diff < 0 ? 'plus' : 'negative';
                 $(vars.difference).removeClass('plus negative');
                 $(vars.difference).html('('+posOrNeg + diff+')')
-                .addClass(diffClass);
+                    .addClass(diffClass);
             });
 
+            // grab the average of each card
+            server.grab('data/analysis/averages.json', function(result){
+                // do something with this result TODO @KJG
+                console.log(result);
+            });
         },
 
         updateOverview : function() {
