@@ -1,5 +1,7 @@
 import logging
 import json
+import os
+
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
 from elasticsearch_dsl.connections import connections
@@ -31,7 +33,9 @@ def run_aggregations():
                 print('aggregations failed %s', response.to_dict())
 
     # write this json to a file now
-    path = "../analysis/data/"
+    path = "../data/analysis/"
+    if not os.path.exists(path):
+        os.makedirs(path)
     averages_file = path + "averages.json"
     with open(averages_file, 'w') as output_file:
         json.dump(averages, output_file)
