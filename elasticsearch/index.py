@@ -29,11 +29,6 @@ def create_index():
     except (RuntimeError, TypeError, NameError):
         pass
 
-""" Test method to visualize the cc structure """
-def test_files():
-    data_files = files.cc_structure()
-    print(data_files)
-
 """ Iterate through to pay data to upload to es """
 def upload_data():
     key_name = "to_pay"
@@ -64,6 +59,12 @@ def upload_data():
             print(result["errors"])
         else:
             logging.info('Uploaded data file %s' % data)
+
+
+""" Test method to visualize the cc structure """
+def test_files():
+    data_files = files.cc_structure()
+    print(data_files)
 
 
 if __name__ == '__main__':
