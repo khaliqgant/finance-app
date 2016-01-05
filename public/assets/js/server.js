@@ -75,8 +75,8 @@ var Server = {
      *      set some instance variables
      */
     nextMonthCheck : function(date) {
-        var nextMonth = moment(date,'MM_YYYY')
-            .add(1, 'months').format('MM_YYYY');
+        var nextMonth = moment(date,'YYYY_MM')
+            .add(1, 'months').format('YYYY_MM');
         var url = 'data/' + nextMonth + '.json';
         var lastMonth = 'data/' + date + '.json';
         var exists = true;
@@ -114,8 +114,8 @@ var Server = {
      * @use run a check if the previous month exists and hide it if it doesn't
      */
     previousMonthCheck : function(date) {
-        var lastMonth = moment(date,'MM_YYYY')
-            .subtract(1, 'months').format('MM_YYYY');
+        var lastMonth = moment(date,'YYYY_MM')
+            .subtract(1, 'months').format('YYYY_MM');
         var url = 'data/' + lastMonth + '.json';
         var exists = true;
 

@@ -259,8 +259,8 @@ var Finances = (function(){
 
             if (item.value.hasOwnProperty('next_month')) {
                 var month = item.value.next_month ?
-                    moment(app.date, 'MM_YYYY').month() + 2 :
-                    moment(app.date, 'MM_YYYY').format('M');
+                    moment(app.date, 'YYYY_MM').month() + 2 :
+                    moment(app.date, 'YYYY_MM').format('M');
                 if (month > 12) {
                     month = 1;
                 }
@@ -742,7 +742,7 @@ var Finances = (function(){
                         .add(vars.monthCount,'months').format('MMMM');
                 methods.updateMonth(month);
                 app.date = moment()
-                        .add(vars.monthCount,'months').format('MM_YYYY');
+                        .add(vars.monthCount,'months').format('YYYY_MM');
 
                 // make a new file
                 if ($(this).hasClass('inactive')){
@@ -771,7 +771,7 @@ var Finances = (function(){
                         .add(vars.monthCount,'months').format('MMMM');
                 methods.updateMonth(month);
                 app.date = moment()
-                        .add(vars.monthCount,'months').format('MM_YYYY');
+                        .add(vars.monthCount,'months').format('YYYY_MM');
                 // re-initialize the app
                 methods.reset(function(done){
                     methods.init();
@@ -782,7 +782,7 @@ var Finances = (function(){
                 e.preventDefault();
                 vars.monthCount = 0;
                 methods.updateMonth();
-                app.date = moment().format('MM_YYYY');
+                app.date = moment().format('YYYY_MM');
                 methods.reset(function(done){
                     methods.init();
                 });

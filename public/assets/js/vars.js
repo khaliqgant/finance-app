@@ -11,7 +11,7 @@
 var moment = require('moment');
 
 var Vars = {
-    date : moment().format('MM_YYYY'),
+    date : moment().format('YYYY_MM'),
     cash : '.js-cash',
     debt : '.js-debt',
     to_pay : '.js-to_pay',

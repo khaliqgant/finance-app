@@ -14,10 +14,10 @@ var trends = {
         var end = moment();
         var count = 0;
         var total = 0;
-        while(start.format('MM_YYYY') !== end.format('MM_YYYY'))
+        while(start.format('YYYY_MM') !== end.format('YYYY_MM'))
         {
             start = start.add('1', 'months');
-            var fileDate = start.format('MM_YYYY');
+            var fileDate = start.format('YYYY_MM');
             var file = 'data/' + fileDate + '.json';
             try {
                 var data = JSON.parse(fs.readFileSync(file));
