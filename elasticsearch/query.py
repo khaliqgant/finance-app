@@ -6,10 +6,13 @@ connections.create_connection(hosts=['localhost:9200'], timeout=20)
 
 from helpers import files
 
+import os
+os.system('/bin/bash --rcfile /venv.sh')
+
 
 """ Run ES aggregations on finance data """
-""" Docs: http://elasticsearch-dsl.readthedocs.org/en/latest/search_dsl.html """
 def run_aggregations():
+# http://elasticsearch-dsl.readthedocs.org/en/latest/search_dsl.html
     client = Elasticsearch()
     s = Search(using=client, index="finances")
 
@@ -17,7 +20,6 @@ def run_aggregations():
 
     average_agg(s, structure)
     stats_agg(s, structure)
-
 
 
 def make_file(data, file_name):
@@ -43,6 +45,7 @@ def average_agg(s, structure):
             else:
                 print('aggregations failed %s', response.to_dict())
     make_file(averages, "averages.json")
+
 
 def stats_agg(s, structure):
     stats = {}

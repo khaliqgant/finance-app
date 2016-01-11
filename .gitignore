@@ -6,3 +6,13 @@ auth/*
 /elasticsearch/venv/
 *.pyc
 /elasticsearch/schema.json
+
+#c ignore https://github.com/github/gitignore/blob/master/C.gitignore
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Rope
+.ropeproject
