@@ -6,10 +6,6 @@ connections.create_connection(hosts=['localhost:9200'], timeout=20)
 
 from helpers import files
 
-import os
-os.system('/bin/bash --rcfile /venv.sh')
-
-
 """ Run ES aggregations on finance data """
 def run_aggregations():
 # http://elasticsearch-dsl.readthedocs.org/en/latest/search_dsl.html

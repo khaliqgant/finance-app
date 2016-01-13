@@ -25,8 +25,12 @@ int main(int argc, char **argv)
         printf("There was an error calling elasticsearch %s\n", strerror(errno));
     } else {
         // parent process
+
+        // sleep to make sure es started up
         sleep(20);
-        system("sh venv.sh && python query.py");
+
+        // call cron
+        system("sh venv.sh");
 
         // now kill the ES process
         kill(pid, SIGKILL);
