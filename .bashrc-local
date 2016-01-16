@@ -8,3 +8,4 @@ alias backup:data='sshpass -f auth/.pass rsync -r khaliqgant:/home/kjg/finances/
 alias sync:data='sshpass -f auth/.pass rsync -r khaliqgant:/home/kjg/finances/data . -v && backup:data'
 alias upload:data='sshpass -f auth/.pass rsync -r data khaliqgant:/home/kjg/finances -v'
 alias ggpull='ggpull && sync:data'
+alias es='/usr/local/bin/elasticsearch --config=/usr/local/opt/elasticsearch/config/elasticsearch.yml'
