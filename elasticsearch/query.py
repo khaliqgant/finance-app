@@ -6,9 +6,10 @@ connections.create_connection(hosts=['localhost:9200'], timeout=20)
 
 from helpers import files
 
-""" Run ES aggregations on finance data """
+
 def run_aggregations():
-# http://elasticsearch-dsl.readthedocs.org/en/latest/search_dsl.html
+    """ Run ES aggregations on finance data """
+    # http://elasticsearch-dsl.readthedocs.org/en/latest/search_dsl.html
     client = Elasticsearch()
     s = Search(using=client, index="finances")
 
@@ -54,7 +55,8 @@ def stats_agg(s, structure):
             response = s.execute()
             if response.success():
                 # round off the stats value
-                for key, value in response.aggregations.cc_stats.stats.to_dict().iteritems():
+                for key, value in response.aggregations.cc_stats.stats\
+                        .to_dict().iteritems():
                     stats[card_type][card][key] = "%.2f" % value
             else:
                 print('aggregations failed %s', response.to_dict())
