@@ -30,10 +30,13 @@ int main(int argc, char **argv)
         sleep(20);
 
         // call cron
-        system("sh venv.sh");
+        system("sh init.sh");
 
         // now kill the ES process
         kill(pid, SIGKILL);
+
+        // call bash script to upload to server
+        system("sh upload.sh");
 
     }
 
