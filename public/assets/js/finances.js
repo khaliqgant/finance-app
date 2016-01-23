@@ -26,6 +26,7 @@ var sweetAlert  = require('sweetalert');
 var enquire     = require('enquire.js');
 var bunyan      = require('bunyan');
 var TapListener = require('tap-listener');
+var vs          = require('vis');
 
 var Finances = (function(){
     var debug = false;
