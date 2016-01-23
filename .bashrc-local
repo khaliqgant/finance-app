@@ -4,8 +4,15 @@ alias js:watch='watchify public/assets/js/finances.js -o public/assets/js/app.js
 alias css:compile='(cd public/assets/css && npm-css finances.css -o app.css)'
 alias deploy='(cd deploy && ansible-playbook deploy.yml --ask-pass)'
 alias server:run='nodemon server.js'
-alias backup:data='sshpass -f auth/.pass rsync -r khaliqgant:/home/kjg/finances/data "/Users/kgant/Dropbox (Personal)/KJG/Personal/Finances/App Data Backup/"'
-alias sync:data='sshpass -f auth/.pass rsync -r khaliqgant:/home/kjg/finances/data . -v && backup:data'
 alias upload:data='sshpass -f auth/.pass rsync -r data khaliqgant:/home/kjg/finances -v'
 alias ggpull='ggpull && sync:data'
 alias es='/usr/local/bin/elasticsearch --config=/usr/local/opt/elasticsearch/config/elasticsearch.yml'
+
+dropbox_data=~/Dropbox\ \(Personal\)/KJG/Personal/Finances/App\ Data\ Backup/
+
+backup:data() {
+    sshpass -f auth/.pass rsync -r khaliqgant:/home/kjg/finances/data $dropbox_data
+}
+
+alias sync:data='sshpass -f auth/.pass rsync -r khaliqgant:/home/kjg/finances/data . -v && backup:data'
+
