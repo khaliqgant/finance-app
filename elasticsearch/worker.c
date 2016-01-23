@@ -14,6 +14,9 @@ static void die(const char *s)
     exit(1);
 }
 
+/**
+ * Gets called by a cron every 15th of the month at 7 PM
+ */
 int main(int argc, char **argv)
 {
     pid_t pid = fork();
