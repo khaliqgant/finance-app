@@ -471,6 +471,7 @@ var Finances = (function(){
         /**
          * Compute Trends
          * @use calculate trends and append to the trend box
+         *      and add information for visualization data
          */
         computeTrends : function() {
             // running average of "to pay at least" for the last 12 months
@@ -491,8 +492,8 @@ var Finances = (function(){
             });
 
             // grab the average of each card
-            server.grab('data/analysis/averages.json', function(result){
-                Finances.app.visualize.averages = result;
+            server.grab('data/analysis/stats.json', function(result){
+                Finances.app.visualize.stats = result;
             });
         },
 
