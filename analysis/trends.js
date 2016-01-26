@@ -14,6 +14,8 @@ var trends = {
         var end = moment();
         var count = 0;
         var total = 0;
+        var dates = [];
+        var all_cards = [];
         while(start.format('YYYY_MM') !== end.format('YYYY_MM'))
         {
             start = start.add('1', 'months');
@@ -22,6 +24,8 @@ var trends = {
             try {
                 var data = JSON.parse(fs.readFileSync(file));
                 var cards = data.to_pay.credit_cards;
+                all_cards.push(cards);
+                dates.push(file);
                 count++;
                 for (var credit in cards) {
                     for (var type in cards[credit]) {
@@ -35,7 +39,11 @@ var trends = {
         }
         if (typeof callback === 'function') {
             var average = total / count;
-            callback(average);
+            var response = {};
+            response.average = average;
+            response.cards = all_cards;
+            response.dates = dates;
+            callback(response);
         }
 
     },

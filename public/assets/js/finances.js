@@ -43,7 +43,8 @@ var Finances = (function(){
         debt : 0,
         toPay : 0,
         ring : 0,
-        sections : ['debt','cash', 'to_pay', 'notes', 'links']
+        sections : ['debt','cash', 'to_pay', 'notes', 'links'],
+        visualize: {}
     };
 
     /**
@@ -474,8 +475,13 @@ var Finances = (function(){
         computeTrends : function() {
             // running average of "to pay at least" for the last 12 months
             server.generic(undefined, 'average', function(result){
-                Finances.app.average = app.average = result.toFixed(2);
-                $(vars.toPayAvg).text('$' + result.toFixed(2));
+                // store this info for the visualizations
+                Finances.app.visualize.all_cards = result.cards;
+                Finances.app.visualize.all_dates = result.dates;
+
+                var average = result.average;
+                Finances.app.average = app.average = average.toFixed(2);
+                $(vars.toPayAvg).text('$' + average.toFixed(2));
                 var diff = (app.toPay - app.average).toFixed(2);
                 var posOrNeg = diff > 0 ? '+' : '';
                 var diffClass = diff < 0 ? 'plus' : 'negative';
@@ -486,8 +492,7 @@ var Finances = (function(){
 
             // grab the average of each card
             server.grab('data/analysis/averages.json', function(result){
-                // do something with this result TODO @KJG
-                console.log(result);
+                Finances.app.visualize.averages = result;
             });
         },
 
