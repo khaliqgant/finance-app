@@ -4858,7 +4858,7 @@ module.exports.RotatingFileStream = RotatingFileStream;
 module.exports.safeCycles = safeCycles;
 
 }).call(this,require('_process'),require("buffer").Buffer)
-},{"_process":26,"assert":18,"buffer":19,"events":23,"fs":17,"os":25,"safe-json-stringify":4,"util":28}],4:[function(require,module,exports){
+},{"_process":27,"assert":19,"buffer":20,"events":24,"fs":18,"os":26,"safe-json-stringify":4,"util":29}],4:[function(require,module,exports){
 var hasProp = Object.prototype.hasOwnProperty;
 
 function throwsMessage(err) {
@@ -17538,8 +17538,2060 @@ return jQuery;
 
 }));
 },{}],8:[function(require,module,exports){
+(function (process){
+// vim:ts=4:sts=4:sw=4:
+/*!
+ *
+ * Copyright 2009-2012 Kris Kowal under the terms of the MIT
+ * license found at http://github.com/kriskowal/q/raw/master/LICENSE
+ *
+ * With parts by Tyler Close
+ * Copyright 2007-2009 Tyler Close under the terms of the MIT X license found
+ * at http://www.opensource.org/licenses/mit-license.html
+ * Forked at ref_send.js version: 2009-05-11
+ *
+ * With parts by Mark Miller
+ * Copyright (C) 2011 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+(function (definition) {
+    "use strict";
+
+    // This file will function properly as a <script> tag, or a module
+    // using CommonJS and NodeJS or RequireJS module formats.  In
+    // Common/Node/RequireJS, the module exports the Q API and when
+    // executed as a simple <script>, it creates a Q global instead.
+
+    // Montage Require
+    if (typeof bootstrap === "function") {
+        bootstrap("promise", definition);
+
+    // CommonJS
+    } else if (typeof exports === "object" && typeof module === "object") {
+        module.exports = definition();
+
+    // RequireJS
+    } else if (typeof define === "function" && define.amd) {
+        define(definition);
+
+    // SES (Secure EcmaScript)
+    } else if (typeof ses !== "undefined") {
+        if (!ses.ok()) {
+            return;
+        } else {
+            ses.makeQ = definition;
+        }
+
+    // <script>
+    } else if (typeof window !== "undefined" || typeof self !== "undefined") {
+        // Prefer window over self for add-on scripts. Use self for
+        // non-windowed contexts.
+        var global = typeof window !== "undefined" ? window : self;
+
+        // Get the `window` object, save the previous Q global
+        // and initialize Q as a global.
+        var previousQ = global.Q;
+        global.Q = definition();
+
+        // Add a noConflict function so Q can be removed from the
+        // global namespace.
+        global.Q.noConflict = function () {
+            global.Q = previousQ;
+            return this;
+        };
+
+    } else {
+        throw new Error("This environment was not anticipated by Q. Please file a bug.");
+    }
+
+})(function () {
+"use strict";
+
+var hasStacks = false;
+try {
+    throw new Error();
+} catch (e) {
+    hasStacks = !!e.stack;
+}
+
+// All code after this point will be filtered from stack traces reported
+// by Q.
+var qStartingLine = captureLine();
+var qFileName;
+
+// shims
+
+// used for fallback in "allResolved"
+var noop = function () {};
+
+// Use the fastest possible means to execute a task in a future turn
+// of the event loop.
+var nextTick =(function () {
+    // linked list of tasks (single, with head node)
+    var head = {task: void 0, next: null};
+    var tail = head;
+    var flushing = false;
+    var requestTick = void 0;
+    var isNodeJS = false;
+    // queue for late tasks, used by unhandled rejection tracking
+    var laterQueue = [];
+
+    function flush() {
+        /* jshint loopfunc: true */
+        var task, domain;
+
+        while (head.next) {
+            head = head.next;
+            task = head.task;
+            head.task = void 0;
+            domain = head.domain;
+
+            if (domain) {
+                head.domain = void 0;
+                domain.enter();
+            }
+            runSingle(task, domain);
+
+        }
+        while (laterQueue.length) {
+            task = laterQueue.pop();
+            runSingle(task);
+        }
+        flushing = false;
+    }
+    // runs a single function in the async queue
+    function runSingle(task, domain) {
+        try {
+            task();
+
+        } catch (e) {
+            if (isNodeJS) {
+                // In node, uncaught exceptions are considered fatal errors.
+                // Re-throw them synchronously to interrupt flushing!
+
+                // Ensure continuation if the uncaught exception is suppressed
+                // listening "uncaughtException" events (as domains does).
+                // Continue in next event to avoid tick recursion.
+                if (domain) {
+                    domain.exit();
+                }
+                setTimeout(flush, 0);
+                if (domain) {
+                    domain.enter();
+                }
+
+                throw e;
+
+            } else {
+                // In browsers, uncaught exceptions are not fatal.
+                // Re-throw them asynchronously to avoid slow-downs.
+                setTimeout(function () {
+                    throw e;
+                }, 0);
+            }
+        }
+
+        if (domain) {
+            domain.exit();
+        }
+    }
+
+    nextTick = function (task) {
+        tail = tail.next = {
+            task: task,
+            domain: isNodeJS && process.domain,
+            next: null
+        };
+
+        if (!flushing) {
+            flushing = true;
+            requestTick();
+        }
+    };
+
+    if (typeof process === "object" &&
+        process.toString() === "[object process]" && process.nextTick) {
+        // Ensure Q is in a real Node environment, with a `process.nextTick`.
+        // To see through fake Node environments:
+        // * Mocha test runner - exposes a `process` global without a `nextTick`
+        // * Browserify - exposes a `process.nexTick` function that uses
+        //   `setTimeout`. In this case `setImmediate` is preferred because
+        //    it is faster. Browserify's `process.toString()` yields
+        //   "[object Object]", while in a real Node environment
+        //   `process.nextTick()` yields "[object process]".
+        isNodeJS = true;
+
+        requestTick = function () {
+            process.nextTick(flush);
+        };
+
+    } else if (typeof setImmediate === "function") {
+        // In IE10, Node.js 0.9+, or https://github.com/NobleJS/setImmediate
+        if (typeof window !== "undefined") {
+            requestTick = setImmediate.bind(window, flush);
+        } else {
+            requestTick = function () {
+                setImmediate(flush);
+            };
+        }
+
+    } else if (typeof MessageChannel !== "undefined") {
+        // modern browsers
+        // http://www.nonblocking.io/2011/06/windownexttick.html
+        var channel = new MessageChannel();
+        // At least Safari Version 6.0.5 (8536.30.1) intermittently cannot create
+        // working message ports the first time a page loads.
+        channel.port1.onmessage = function () {
+            requestTick = requestPortTick;
+            channel.port1.onmessage = flush;
+            flush();
+        };
+        var requestPortTick = function () {
+            // Opera requires us to provide a message payload, regardless of
+            // whether we use it.
+            channel.port2.postMessage(0);
+        };
+        requestTick = function () {
+            setTimeout(flush, 0);
+            requestPortTick();
+        };
+
+    } else {
+        // old browsers
+        requestTick = function () {
+            setTimeout(flush, 0);
+        };
+    }
+    // runs a task after all other tasks have been run
+    // this is useful for unhandled rejection tracking that needs to happen
+    // after all `then`d tasks have been run.
+    nextTick.runAfter = function (task) {
+        laterQueue.push(task);
+        if (!flushing) {
+            flushing = true;
+            requestTick();
+        }
+    };
+    return nextTick;
+})();
+
+// Attempt to make generics safe in the face of downstream
+// modifications.
+// There is no situation where this is necessary.
+// If you need a security guarantee, these primordials need to be
+// deeply frozen anyway, and if you don’t need a security guarantee,
+// this is just plain paranoid.
+// However, this **might** have the nice side-effect of reducing the size of
+// the minified code by reducing x.call() to merely x()
+// See Mark Miller’s explanation of what this does.
+// http://wiki.ecmascript.org/doku.php?id=conventions:safe_meta_programming
+var call = Function.call;
+function uncurryThis(f) {
+    return function () {
+        return call.apply(f, arguments);
+    };
+}
+// This is equivalent, but slower:
+// uncurryThis = Function_bind.bind(Function_bind.call);
+// http://jsperf.com/uncurrythis
+
+var array_slice = uncurryThis(Array.prototype.slice);
+
+var array_reduce = uncurryThis(
+    Array.prototype.reduce || function (callback, basis) {
+        var index = 0,
+            length = this.length;
+        // concerning the initial value, if one is not provided
+        if (arguments.length === 1) {
+            // seek to the first value in the array, accounting
+            // for the possibility that is is a sparse array
+            do {
+                if (index in this) {
+                    basis = this[index++];
+                    break;
+                }
+                if (++index >= length) {
+                    throw new TypeError();
+                }
+            } while (1);
+        }
+        // reduce
+        for (; index < length; index++) {
+            // account for the possibility that the array is sparse
+            if (index in this) {
+                basis = callback(basis, this[index], index);
+            }
+        }
+        return basis;
+    }
+);
+
+var array_indexOf = uncurryThis(
+    Array.prototype.indexOf || function (value) {
+        // not a very good shim, but good enough for our one use of it
+        for (var i = 0; i < this.length; i++) {
+            if (this[i] === value) {
+                return i;
+            }
+        }
+        return -1;
+    }
+);
+
+var array_map = uncurryThis(
+    Array.prototype.map || function (callback, thisp) {
+        var self = this;
+        var collect = [];
+        array_reduce(self, function (undefined, value, index) {
+            collect.push(callback.call(thisp, value, index, self));
+        }, void 0);
+        return collect;
+    }
+);
+
+var object_create = Object.create || function (prototype) {
+    function Type() { }
+    Type.prototype = prototype;
+    return new Type();
+};
+
+var object_hasOwnProperty = uncurryThis(Object.prototype.hasOwnProperty);
+
+var object_keys = Object.keys || function (object) {
+    var keys = [];
+    for (var key in object) {
+        if (object_hasOwnProperty(object, key)) {
+            keys.push(key);
+        }
+    }
+    return keys;
+};
+
+var object_toString = uncurryThis(Object.prototype.toString);
+
+function isObject(value) {
+    return value === Object(value);
+}
+
+// generator related shims
+
+// FIXME: Remove this function once ES6 generators are in SpiderMonkey.
+function isStopIteration(exception) {
+    return (
+        object_toString(exception) === "[object StopIteration]" ||
+        exception instanceof QReturnValue
+    );
+}
+
+// FIXME: Remove this helper and Q.return once ES6 generators are in
+// SpiderMonkey.
+var QReturnValue;
+if (typeof ReturnValue !== "undefined") {
+    QReturnValue = ReturnValue;
+} else {
+    QReturnValue = function (value) {
+        this.value = value;
+    };
+}
+
+// long stack traces
+
+var STACK_JUMP_SEPARATOR = "From previous event:";
+
+function makeStackTraceLong(error, promise) {
+    // If possible, transform the error stack trace by removing Node and Q
+    // cruft, then concatenating with the stack trace of `promise`. See #57.
+    if (hasStacks &&
+        promise.stack &&
+        typeof error === "object" &&
+        error !== null &&
+        error.stack &&
+        error.stack.indexOf(STACK_JUMP_SEPARATOR) === -1
+    ) {
+        var stacks = [];
+        for (var p = promise; !!p; p = p.source) {
+            if (p.stack) {
+                stacks.unshift(p.stack);
+            }
+        }
+        stacks.unshift(error.stack);
+
+        var concatedStacks = stacks.join("\n" + STACK_JUMP_SEPARATOR + "\n");
+        error.stack = filterStackString(concatedStacks);
+    }
+}
+
+function filterStackString(stackString) {
+    var lines = stackString.split("\n");
+    var desiredLines = [];
+    for (var i = 0; i < lines.length; ++i) {
+        var line = lines[i];
+
+        if (!isInternalFrame(line) && !isNodeFrame(line) && line) {
+            desiredLines.push(line);
+        }
+    }
+    return desiredLines.join("\n");
+}
+
+function isNodeFrame(stackLine) {
+    return stackLine.indexOf("(module.js:") !== -1 ||
+           stackLine.indexOf("(node.js:") !== -1;
+}
+
+function getFileNameAndLineNumber(stackLine) {
+    // Named functions: "at functionName (filename:lineNumber:columnNumber)"
+    // In IE10 function name can have spaces ("Anonymous function") O_o
+    var attempt1 = /at .+ \((.+):(\d+):(?:\d+)\)$/.exec(stackLine);
+    if (attempt1) {
+        return [attempt1[1], Number(attempt1[2])];
+    }
+
+    // Anonymous functions: "at filename:lineNumber:columnNumber"
+    var attempt2 = /at ([^ ]+):(\d+):(?:\d+)$/.exec(stackLine);
+    if (attempt2) {
+        return [attempt2[1], Number(attempt2[2])];
+    }
+
+    // Firefox style: "function@filename:lineNumber or @filename:lineNumber"
+    var attempt3 = /.*@(.+):(\d+)$/.exec(stackLine);
+    if (attempt3) {
+        return [attempt3[1], Number(attempt3[2])];
+    }
+}
+
+function isInternalFrame(stackLine) {
+    var fileNameAndLineNumber = getFileNameAndLineNumber(stackLine);
+
+    if (!fileNameAndLineNumber) {
+        return false;
+    }
+
+    var fileName = fileNameAndLineNumber[0];
+    var lineNumber = fileNameAndLineNumber[1];
+
+    return fileName === qFileName &&
+        lineNumber >= qStartingLine &&
+        lineNumber <= qEndingLine;
+}
+
+// discover own file name and line number range for filtering stack
+// traces
+function captureLine() {
+    if (!hasStacks) {
+        return;
+    }
+
+    try {
+        throw new Error();
+    } catch (e) {
+        var lines = e.stack.split("\n");
+        var firstLine = lines[0].indexOf("@") > 0 ? lines[1] : lines[2];
+        var fileNameAndLineNumber = getFileNameAndLineNumber(firstLine);
+        if (!fileNameAndLineNumber) {
+            return;
+        }
+
+        qFileName = fileNameAndLineNumber[0];
+        return fileNameAndLineNumber[1];
+    }
+}
+
+function deprecate(callback, name, alternative) {
+    return function () {
+        if (typeof console !== "undefined" &&
+            typeof console.warn === "function") {
+            console.warn(name + " is deprecated, use " + alternative +
+                         " instead.", new Error("").stack);
+        }
+        return callback.apply(callback, arguments);
+    };
+}
+
+// end of shims
+// beginning of real work
+
+/**
+ * Constructs a promise for an immediate reference, passes promises through, or
+ * coerces promises from different systems.
+ * @param value immediate reference or promise
+ */
+function Q(value) {
+    // If the object is already a Promise, return it directly.  This enables
+    // the resolve function to both be used to created references from objects,
+    // but to tolerably coerce non-promises to promises.
+    if (value instanceof Promise) {
+        return value;
+    }
+
+    // assimilate thenables
+    if (isPromiseAlike(value)) {
+        return coerce(value);
+    } else {
+        return fulfill(value);
+    }
+}
+Q.resolve = Q;
+
+/**
+ * Performs a task in a future turn of the event loop.
+ * @param {Function} task
+ */
+Q.nextTick = nextTick;
+
+/**
+ * Controls whether or not long stack traces will be on
+ */
+Q.longStackSupport = false;
+
+// enable long stacks if Q_DEBUG is set
+if (typeof process === "object" && process && process.env && process.env.Q_DEBUG) {
+    Q.longStackSupport = true;
+}
+
+/**
+ * Constructs a {promise, resolve, reject} object.
+ *
+ * `resolve` is a callback to invoke with a more resolved value for the
+ * promise. To fulfill the promise, invoke `resolve` with any value that is
+ * not a thenable. To reject the promise, invoke `resolve` with a rejected
+ * thenable, or invoke `reject` with the reason directly. To resolve the
+ * promise to another thenable, thus putting it in the same state, invoke
+ * `resolve` with that other thenable.
+ */
+Q.defer = defer;
+function defer() {
+    // if "messages" is an "Array", that indicates that the promise has not yet
+    // been resolved.  If it is "undefined", it has been resolved.  Each
+    // element of the messages array is itself an array of complete arguments to
+    // forward to the resolved promise.  We coerce the resolution value to a
+    // promise using the `resolve` function because it handles both fully
+    // non-thenable values and other thenables gracefully.
+    var messages = [], progressListeners = [], resolvedPromise;
+
+    var deferred = object_create(defer.prototype);
+    var promise = object_create(Promise.prototype);
+
+    promise.promiseDispatch = function (resolve, op, operands) {
+        var args = array_slice(arguments);
+        if (messages) {
+            messages.push(args);
+            if (op === "when" && operands[1]) { // progress operand
+                progressListeners.push(operands[1]);
+            }
+        } else {
+            Q.nextTick(function () {
+                resolvedPromise.promiseDispatch.apply(resolvedPromise, args);
+            });
+        }
+    };
+
+    // XXX deprecated
+    promise.valueOf = function () {
+        if (messages) {
+            return promise;
+        }
+        var nearerValue = nearer(resolvedPromise);
+        if (isPromise(nearerValue)) {
+            resolvedPromise = nearerValue; // shorten chain
+        }
+        return nearerValue;
+    };
+
+    promise.inspect = function () {
+        if (!resolvedPromise) {
+            return { state: "pending" };
+        }
+        return resolvedPromise.inspect();
+    };
+
+    if (Q.longStackSupport && hasStacks) {
+        try {
+            throw new Error();
+        } catch (e) {
+            // NOTE: don't try to use `Error.captureStackTrace` or transfer the
+            // accessor around; that causes memory leaks as per GH-111. Just
+            // reify the stack trace as a string ASAP.
+            //
+            // At the same time, cut off the first line; it's always just
+            // "[object Promise]\n", as per the `toString`.
+            promise.stack = e.stack.substring(e.stack.indexOf("\n") + 1);
+        }
+    }
+
+    // NOTE: we do the checks for `resolvedPromise` in each method, instead of
+    // consolidating them into `become`, since otherwise we'd create new
+    // promises with the lines `become(whatever(value))`. See e.g. GH-252.
+
+    function become(newPromise) {
+        resolvedPromise = newPromise;
+        promise.source = newPromise;
+
+        array_reduce(messages, function (undefined, message) {
+            Q.nextTick(function () {
+                newPromise.promiseDispatch.apply(newPromise, message);
+            });
+        }, void 0);
+
+        messages = void 0;
+        progressListeners = void 0;
+    }
+
+    deferred.promise = promise;
+    deferred.resolve = function (value) {
+        if (resolvedPromise) {
+            return;
+        }
+
+        become(Q(value));
+    };
+
+    deferred.fulfill = function (value) {
+        if (resolvedPromise) {
+            return;
+        }
+
+        become(fulfill(value));
+    };
+    deferred.reject = function (reason) {
+        if (resolvedPromise) {
+            return;
+        }
+
+        become(reject(reason));
+    };
+    deferred.notify = function (progress) {
+        if (resolvedPromise) {
+            return;
+        }
+
+        array_reduce(progressListeners, function (undefined, progressListener) {
+            Q.nextTick(function () {
+                progressListener(progress);
+            });
+        }, void 0);
+    };
+
+    return deferred;
+}
+
+/**
+ * Creates a Node-style callback that will resolve or reject the deferred
+ * promise.
+ * @returns a nodeback
+ */
+defer.prototype.makeNodeResolver = function () {
+    var self = this;
+    return function (error, value) {
+        if (error) {
+            self.reject(error);
+        } else if (arguments.length > 2) {
+            self.resolve(array_slice(arguments, 1));
+        } else {
+            self.resolve(value);
+        }
+    };
+};
+
+/**
+ * @param resolver {Function} a function that returns nothing and accepts
+ * the resolve, reject, and notify functions for a deferred.
+ * @returns a promise that may be resolved with the given resolve and reject
+ * functions, or rejected by a thrown exception in resolver
+ */
+Q.Promise = promise; // ES6
+Q.promise = promise;
+function promise(resolver) {
+    if (typeof resolver !== "function") {
+        throw new TypeError("resolver must be a function.");
+    }
+    var deferred = defer();
+    try {
+        resolver(deferred.resolve, deferred.reject, deferred.notify);
+    } catch (reason) {
+        deferred.reject(reason);
+    }
+    return deferred.promise;
+}
+
+promise.race = race; // ES6
+promise.all = all; // ES6
+promise.reject = reject; // ES6
+promise.resolve = Q; // ES6
+
+// XXX experimental.  This method is a way to denote that a local value is
+// serializable and should be immediately dispatched to a remote upon request,
+// instead of passing a reference.
+Q.passByCopy = function (object) {
+    //freeze(object);
+    //passByCopies.set(object, true);
+    return object;
+};
+
+Promise.prototype.passByCopy = function () {
+    //freeze(object);
+    //passByCopies.set(object, true);
+    return this;
+};
+
+/**
+ * If two promises eventually fulfill to the same value, promises that value,
+ * but otherwise rejects.
+ * @param x {Any*}
+ * @param y {Any*}
+ * @returns {Any*} a promise for x and y if they are the same, but a rejection
+ * otherwise.
+ *
+ */
+Q.join = function (x, y) {
+    return Q(x).join(y);
+};
+
+Promise.prototype.join = function (that) {
+    return Q([this, that]).spread(function (x, y) {
+        if (x === y) {
+            // TODO: "===" should be Object.is or equiv
+            return x;
+        } else {
+            throw new Error("Can't join: not the same: " + x + " " + y);
+        }
+    });
+};
+
+/**
+ * Returns a promise for the first of an array of promises to become settled.
+ * @param answers {Array[Any*]} promises to race
+ * @returns {Any*} the first promise to be settled
+ */
+Q.race = race;
+function race(answerPs) {
+    return promise(function (resolve, reject) {
+        // Switch to this once we can assume at least ES5
+        // answerPs.forEach(function (answerP) {
+        //     Q(answerP).then(resolve, reject);
+        // });
+        // Use this in the meantime
+        for (var i = 0, len = answerPs.length; i < len; i++) {
+            Q(answerPs[i]).then(resolve, reject);
+        }
+    });
+}
+
+Promise.prototype.race = function () {
+    return this.then(Q.race);
+};
+
+/**
+ * Constructs a Promise with a promise descriptor object and optional fallback
+ * function.  The descriptor contains methods like when(rejected), get(name),
+ * set(name, value), post(name, args), and delete(name), which all
+ * return either a value, a promise for a value, or a rejection.  The fallback
+ * accepts the operation name, a resolver, and any further arguments that would
+ * have been forwarded to the appropriate method above had a method been
+ * provided with the proper name.  The API makes no guarantees about the nature
+ * of the returned object, apart from that it is usable whereever promises are
+ * bought and sold.
+ */
+Q.makePromise = Promise;
+function Promise(descriptor, fallback, inspect) {
+    if (fallback === void 0) {
+        fallback = function (op) {
+            return reject(new Error(
+                "Promise does not support operation: " + op
+            ));
+        };
+    }
+    if (inspect === void 0) {
+        inspect = function () {
+            return {state: "unknown"};
+        };
+    }
+
+    var promise = object_create(Promise.prototype);
+
+    promise.promiseDispatch = function (resolve, op, args) {
+        var result;
+        try {
+            if (descriptor[op]) {
+                result = descriptor[op].apply(promise, args);
+            } else {
+                result = fallback.call(promise, op, args);
+            }
+        } catch (exception) {
+            result = reject(exception);
+        }
+        if (resolve) {
+            resolve(result);
+        }
+    };
+
+    promise.inspect = inspect;
+
+    // XXX deprecated `valueOf` and `exception` support
+    if (inspect) {
+        var inspected = inspect();
+        if (inspected.state === "rejected") {
+            promise.exception = inspected.reason;
+        }
+
+        promise.valueOf = function () {
+            var inspected = inspect();
+            if (inspected.state === "pending" ||
+                inspected.state === "rejected") {
+                return promise;
+            }
+            return inspected.value;
+        };
+    }
+
+    return promise;
+}
+
+Promise.prototype.toString = function () {
+    return "[object Promise]";
+};
+
+Promise.prototype.then = function (fulfilled, rejected, progressed) {
+    var self = this;
+    var deferred = defer();
+    var done = false;   // ensure the untrusted promise makes at most a
+                        // single call to one of the callbacks
+
+    function _fulfilled(value) {
+        try {
+            return typeof fulfilled === "function" ? fulfilled(value) : value;
+        } catch (exception) {
+            return reject(exception);
+        }
+    }
+
+    function _rejected(exception) {
+        if (typeof rejected === "function") {
+            makeStackTraceLong(exception, self);
+            try {
+                return rejected(exception);
+            } catch (newException) {
+                return reject(newException);
+            }
+        }
+        return reject(exception);
+    }
+
+    function _progressed(value) {
+        return typeof progressed === "function" ? progressed(value) : value;
+    }
+
+    Q.nextTick(function () {
+        self.promiseDispatch(function (value) {
+            if (done) {
+                return;
+            }
+            done = true;
+
+            deferred.resolve(_fulfilled(value));
+        }, "when", [function (exception) {
+            if (done) {
+                return;
+            }
+            done = true;
+
+            deferred.resolve(_rejected(exception));
+        }]);
+    });
+
+    // Progress propagator need to be attached in the current tick.
+    self.promiseDispatch(void 0, "when", [void 0, function (value) {
+        var newValue;
+        var threw = false;
+        try {
+            newValue = _progressed(value);
+        } catch (e) {
+            threw = true;
+            if (Q.onerror) {
+                Q.onerror(e);
+            } else {
+                throw e;
+            }
+        }
+
+        if (!threw) {
+            deferred.notify(newValue);
+        }
+    }]);
+
+    return deferred.promise;
+};
+
+Q.tap = function (promise, callback) {
+    return Q(promise).tap(callback);
+};
+
+/**
+ * Works almost like "finally", but not called for rejections.
+ * Original resolution value is passed through callback unaffected.
+ * Callback may return a promise that will be awaited for.
+ * @param {Function} callback
+ * @returns {Q.Promise}
+ * @example
+ * doSomething()
+ *   .then(...)
+ *   .tap(console.log)
+ *   .then(...);
+ */
+Promise.prototype.tap = function (callback) {
+    callback = Q(callback);
+
+    return this.then(function (value) {
+        return callback.fcall(value).thenResolve(value);
+    });
+};
+
+/**
+ * Registers an observer on a promise.
+ *
+ * Guarantees:
+ *
+ * 1. that fulfilled and rejected will be called only once.
+ * 2. that either the fulfilled callback or the rejected callback will be
+ *    called, but not both.
+ * 3. that fulfilled and rejected will not be called in this turn.
+ *
+ * @param value      promise or immediate reference to observe
+ * @param fulfilled  function to be called with the fulfilled value
+ * @param rejected   function to be called with the rejection exception
+ * @param progressed function to be called on any progress notifications
+ * @return promise for the return value from the invoked callback
+ */
+Q.when = when;
+function when(value, fulfilled, rejected, progressed) {
+    return Q(value).then(fulfilled, rejected, progressed);
+}
+
+Promise.prototype.thenResolve = function (value) {
+    return this.then(function () { return value; });
+};
+
+Q.thenResolve = function (promise, value) {
+    return Q(promise).thenResolve(value);
+};
+
+Promise.prototype.thenReject = function (reason) {
+    return this.then(function () { throw reason; });
+};
+
+Q.thenReject = function (promise, reason) {
+    return Q(promise).thenReject(reason);
+};
+
+/**
+ * If an object is not a promise, it is as "near" as possible.
+ * If a promise is rejected, it is as "near" as possible too.
+ * If it’s a fulfilled promise, the fulfillment value is nearer.
+ * If it’s a deferred promise and the deferred has been resolved, the
+ * resolution is "nearer".
+ * @param object
+ * @returns most resolved (nearest) form of the object
+ */
+
+// XXX should we re-do this?
+Q.nearer = nearer;
+function nearer(value) {
+    if (isPromise(value)) {
+        var inspected = value.inspect();
+        if (inspected.state === "fulfilled") {
+            return inspected.value;
+        }
+    }
+    return value;
+}
+
+/**
+ * @returns whether the given object is a promise.
+ * Otherwise it is a fulfilled value.
+ */
+Q.isPromise = isPromise;
+function isPromise(object) {
+    return object instanceof Promise;
+}
+
+Q.isPromiseAlike = isPromiseAlike;
+function isPromiseAlike(object) {
+    return isObject(object) && typeof object.then === "function";
+}
+
+/**
+ * @returns whether the given object is a pending promise, meaning not
+ * fulfilled or rejected.
+ */
+Q.isPending = isPending;
+function isPending(object) {
+    return isPromise(object) && object.inspect().state === "pending";
+}
+
+Promise.prototype.isPending = function () {
+    return this.inspect().state === "pending";
+};
+
+/**
+ * @returns whether the given object is a value or fulfilled
+ * promise.
+ */
+Q.isFulfilled = isFulfilled;
+function isFulfilled(object) {
+    return !isPromise(object) || object.inspect().state === "fulfilled";
+}
+
+Promise.prototype.isFulfilled = function () {
+    return this.inspect().state === "fulfilled";
+};
+
+/**
+ * @returns whether the given object is a rejected promise.
+ */
+Q.isRejected = isRejected;
+function isRejected(object) {
+    return isPromise(object) && object.inspect().state === "rejected";
+}
+
+Promise.prototype.isRejected = function () {
+    return this.inspect().state === "rejected";
+};
+
+//// BEGIN UNHANDLED REJECTION TRACKING
+
+// This promise library consumes exceptions thrown in handlers so they can be
+// handled by a subsequent promise.  The exceptions get added to this array when
+// they are created, and removed when they are handled.  Note that in ES6 or
+// shimmed environments, this would naturally be a `Set`.
+var unhandledReasons = [];
+var unhandledRejections = [];
+var reportedUnhandledRejections = [];
+var trackUnhandledRejections = true;
+
+function resetUnhandledRejections() {
+    unhandledReasons.length = 0;
+    unhandledRejections.length = 0;
+
+    if (!trackUnhandledRejections) {
+        trackUnhandledRejections = true;
+    }
+}
+
+function trackRejection(promise, reason) {
+    if (!trackUnhandledRejections) {
+        return;
+    }
+    if (typeof process === "object" && typeof process.emit === "function") {
+        Q.nextTick.runAfter(function () {
+            if (array_indexOf(unhandledRejections, promise) !== -1) {
+                process.emit("unhandledRejection", reason, promise);
+                reportedUnhandledRejections.push(promise);
+            }
+        });
+    }
+
+    unhandledRejections.push(promise);
+    if (reason && typeof reason.stack !== "undefined") {
+        unhandledReasons.push(reason.stack);
+    } else {
+        unhandledReasons.push("(no stack) " + reason);
+    }
+}
+
+function untrackRejection(promise) {
+    if (!trackUnhandledRejections) {
+        return;
+    }
+
+    var at = array_indexOf(unhandledRejections, promise);
+    if (at !== -1) {
+        if (typeof process === "object" && typeof process.emit === "function") {
+            Q.nextTick.runAfter(function () {
+                var atReport = array_indexOf(reportedUnhandledRejections, promise);
+                if (atReport !== -1) {
+                    process.emit("rejectionHandled", unhandledReasons[at], promise);
+                    reportedUnhandledRejections.splice(atReport, 1);
+                }
+            });
+        }
+        unhandledRejections.splice(at, 1);
+        unhandledReasons.splice(at, 1);
+    }
+}
+
+Q.resetUnhandledRejections = resetUnhandledRejections;
+
+Q.getUnhandledReasons = function () {
+    // Make a copy so that consumers can't interfere with our internal state.
+    return unhandledReasons.slice();
+};
+
+Q.stopUnhandledRejectionTracking = function () {
+    resetUnhandledRejections();
+    trackUnhandledRejections = false;
+};
+
+resetUnhandledRejections();
+
+//// END UNHANDLED REJECTION TRACKING
+
+/**
+ * Constructs a rejected promise.
+ * @param reason value describing the failure
+ */
+Q.reject = reject;
+function reject(reason) {
+    var rejection = Promise({
+        "when": function (rejected) {
+            // note that the error has been handled
+            if (rejected) {
+                untrackRejection(this);
+            }
+            return rejected ? rejected(reason) : this;
+        }
+    }, function fallback() {
+        return this;
+    }, function inspect() {
+        return { state: "rejected", reason: reason };
+    });
+
+    // Note that the reason has not been handled.
+    trackRejection(rejection, reason);
+
+    return rejection;
+}
+
+/**
+ * Constructs a fulfilled promise for an immediate reference.
+ * @param value immediate reference
+ */
+Q.fulfill = fulfill;
+function fulfill(value) {
+    return Promise({
+        "when": function () {
+            return value;
+        },
+        "get": function (name) {
+            return value[name];
+        },
+        "set": function (name, rhs) {
+            value[name] = rhs;
+        },
+        "delete": function (name) {
+            delete value[name];
+        },
+        "post": function (name, args) {
+            // Mark Miller proposes that post with no name should apply a
+            // promised function.
+            if (name === null || name === void 0) {
+                return value.apply(void 0, args);
+            } else {
+                return value[name].apply(value, args);
+            }
+        },
+        "apply": function (thisp, args) {
+            return value.apply(thisp, args);
+        },
+        "keys": function () {
+            return object_keys(value);
+        }
+    }, void 0, function inspect() {
+        return { state: "fulfilled", value: value };
+    });
+}
+
+/**
+ * Converts thenables to Q promises.
+ * @param promise thenable promise
+ * @returns a Q promise
+ */
+function coerce(promise) {
+    var deferred = defer();
+    Q.nextTick(function () {
+        try {
+            promise.then(deferred.resolve, deferred.reject, deferred.notify);
+        } catch (exception) {
+            deferred.reject(exception);
+        }
+    });
+    return deferred.promise;
+}
+
+/**
+ * Annotates an object such that it will never be
+ * transferred away from this process over any promise
+ * communication channel.
+ * @param object
+ * @returns promise a wrapping of that object that
+ * additionally responds to the "isDef" message
+ * without a rejection.
+ */
+Q.master = master;
+function master(object) {
+    return Promise({
+        "isDef": function () {}
+    }, function fallback(op, args) {
+        return dispatch(object, op, args);
+    }, function () {
+        return Q(object).inspect();
+    });
+}
+
+/**
+ * Spreads the values of a promised array of arguments into the
+ * fulfillment callback.
+ * @param fulfilled callback that receives variadic arguments from the
+ * promised array
+ * @param rejected callback that receives the exception if the promise
+ * is rejected.
+ * @returns a promise for the return value or thrown exception of
+ * either callback.
+ */
+Q.spread = spread;
+function spread(value, fulfilled, rejected) {
+    return Q(value).spread(fulfilled, rejected);
+}
+
+Promise.prototype.spread = function (fulfilled, rejected) {
+    return this.all().then(function (array) {
+        return fulfilled.apply(void 0, array);
+    }, rejected);
+};
+
+/**
+ * The async function is a decorator for generator functions, turning
+ * them into asynchronous generators.  Although generators are only part
+ * of the newest ECMAScript 6 drafts, this code does not cause syntax
+ * errors in older engines.  This code should continue to work and will
+ * in fact improve over time as the language improves.
+ *
+ * ES6 generators are currently part of V8 version 3.19 with the
+ * --harmony-generators runtime flag enabled.  SpiderMonkey has had them
+ * for longer, but under an older Python-inspired form.  This function
+ * works on both kinds of generators.
+ *
+ * Decorates a generator function such that:
+ *  - it may yield promises
+ *  - execution will continue when that promise is fulfilled
+ *  - the value of the yield expression will be the fulfilled value
+ *  - it returns a promise for the return value (when the generator
+ *    stops iterating)
+ *  - the decorated function returns a promise for the return value
+ *    of the generator or the first rejected promise among those
+ *    yielded.
+ *  - if an error is thrown in the generator, it propagates through
+ *    every following yield until it is caught, or until it escapes
+ *    the generator function altogether, and is translated into a
+ *    rejection for the promise returned by the decorated generator.
+ */
+Q.async = async;
+function async(makeGenerator) {
+    return function () {
+        // when verb is "send", arg is a value
+        // when verb is "throw", arg is an exception
+        function continuer(verb, arg) {
+            var result;
+
+            // Until V8 3.19 / Chromium 29 is released, SpiderMonkey is the only
+            // engine that has a deployed base of browsers that support generators.
+            // However, SM's generators use the Python-inspired semantics of
+            // outdated ES6 drafts.  We would like to support ES6, but we'd also
+            // like to make it possible to use generators in deployed browsers, so
+            // we also support Python-style generators.  At some point we can remove
+            // this block.
+
+            if (typeof StopIteration === "undefined") {
+                // ES6 Generators
+                try {
+                    result = generator[verb](arg);
+                } catch (exception) {
+                    return reject(exception);
+                }
+                if (result.done) {
+                    return Q(result.value);
+                } else {
+                    return when(result.value, callback, errback);
+                }
+            } else {
+                // SpiderMonkey Generators
+                // FIXME: Remove this case when SM does ES6 generators.
+                try {
+                    result = generator[verb](arg);
+                } catch (exception) {
+                    if (isStopIteration(exception)) {
+                        return Q(exception.value);
+                    } else {
+                        return reject(exception);
+                    }
+                }
+                return when(result, callback, errback);
+            }
+        }
+        var generator = makeGenerator.apply(this, arguments);
+        var callback = continuer.bind(continuer, "next");
+        var errback = continuer.bind(continuer, "throw");
+        return callback();
+    };
+}
+
+/**
+ * The spawn function is a small wrapper around async that immediately
+ * calls the generator and also ends the promise chain, so that any
+ * unhandled errors are thrown instead of forwarded to the error
+ * handler. This is useful because it's extremely common to run
+ * generators at the top-level to work with libraries.
+ */
+Q.spawn = spawn;
+function spawn(makeGenerator) {
+    Q.done(Q.async(makeGenerator)());
+}
+
+// FIXME: Remove this interface once ES6 generators are in SpiderMonkey.
+/**
+ * Throws a ReturnValue exception to stop an asynchronous generator.
+ *
+ * This interface is a stop-gap measure to support generator return
+ * values in older Firefox/SpiderMonkey.  In browsers that support ES6
+ * generators like Chromium 29, just use "return" in your generator
+ * functions.
+ *
+ * @param value the return value for the surrounding generator
+ * @throws ReturnValue exception with the value.
+ * @example
+ * // ES6 style
+ * Q.async(function* () {
+ *      var foo = yield getFooPromise();
+ *      var bar = yield getBarPromise();
+ *      return foo + bar;
+ * })
+ * // Older SpiderMonkey style
+ * Q.async(function () {
+ *      var foo = yield getFooPromise();
+ *      var bar = yield getBarPromise();
+ *      Q.return(foo + bar);
+ * })
+ */
+Q["return"] = _return;
+function _return(value) {
+    throw new QReturnValue(value);
+}
+
+/**
+ * The promised function decorator ensures that any promise arguments
+ * are settled and passed as values (`this` is also settled and passed
+ * as a value).  It will also ensure that the result of a function is
+ * always a promise.
+ *
+ * @example
+ * var add = Q.promised(function (a, b) {
+ *     return a + b;
+ * });
+ * add(Q(a), Q(B));
+ *
+ * @param {function} callback The function to decorate
+ * @returns {function} a function that has been decorated.
+ */
+Q.promised = promised;
+function promised(callback) {
+    return function () {
+        return spread([this, all(arguments)], function (self, args) {
+            return callback.apply(self, args);
+        });
+    };
+}
+
+/**
+ * sends a message to a value in a future turn
+ * @param object* the recipient
+ * @param op the name of the message operation, e.g., "when",
+ * @param args further arguments to be forwarded to the operation
+ * @returns result {Promise} a promise for the result of the operation
+ */
+Q.dispatch = dispatch;
+function dispatch(object, op, args) {
+    return Q(object).dispatch(op, args);
+}
+
+Promise.prototype.dispatch = function (op, args) {
+    var self = this;
+    var deferred = defer();
+    Q.nextTick(function () {
+        self.promiseDispatch(deferred.resolve, op, args);
+    });
+    return deferred.promise;
+};
+
+/**
+ * Gets the value of a property in a future turn.
+ * @param object    promise or immediate reference for target object
+ * @param name      name of property to get
+ * @return promise for the property value
+ */
+Q.get = function (object, key) {
+    return Q(object).dispatch("get", [key]);
+};
+
+Promise.prototype.get = function (key) {
+    return this.dispatch("get", [key]);
+};
+
+/**
+ * Sets the value of a property in a future turn.
+ * @param object    promise or immediate reference for object object
+ * @param name      name of property to set
+ * @param value     new value of property
+ * @return promise for the return value
+ */
+Q.set = function (object, key, value) {
+    return Q(object).dispatch("set", [key, value]);
+};
+
+Promise.prototype.set = function (key, value) {
+    return this.dispatch("set", [key, value]);
+};
+
+/**
+ * Deletes a property in a future turn.
+ * @param object    promise or immediate reference for target object
+ * @param name      name of property to delete
+ * @return promise for the return value
+ */
+Q.del = // XXX legacy
+Q["delete"] = function (object, key) {
+    return Q(object).dispatch("delete", [key]);
+};
+
+Promise.prototype.del = // XXX legacy
+Promise.prototype["delete"] = function (key) {
+    return this.dispatch("delete", [key]);
+};
+
+/**
+ * Invokes a method in a future turn.
+ * @param object    promise or immediate reference for target object
+ * @param name      name of method to invoke
+ * @param value     a value to post, typically an array of
+ *                  invocation arguments for promises that
+ *                  are ultimately backed with `resolve` values,
+ *                  as opposed to those backed with URLs
+ *                  wherein the posted value can be any
+ *                  JSON serializable object.
+ * @return promise for the return value
+ */
+// bound locally because it is used by other methods
+Q.mapply = // XXX As proposed by "Redsandro"
+Q.post = function (object, name, args) {
+    return Q(object).dispatch("post", [name, args]);
+};
+
+Promise.prototype.mapply = // XXX As proposed by "Redsandro"
+Promise.prototype.post = function (name, args) {
+    return this.dispatch("post", [name, args]);
+};
+
+/**
+ * Invokes a method in a future turn.
+ * @param object    promise or immediate reference for target object
+ * @param name      name of method to invoke
+ * @param ...args   array of invocation arguments
+ * @return promise for the return value
+ */
+Q.send = // XXX Mark Miller's proposed parlance
+Q.mcall = // XXX As proposed by "Redsandro"
+Q.invoke = function (object, name /*...args*/) {
+    return Q(object).dispatch("post", [name, array_slice(arguments, 2)]);
+};
+
+Promise.prototype.send = // XXX Mark Miller's proposed parlance
+Promise.prototype.mcall = // XXX As proposed by "Redsandro"
+Promise.prototype.invoke = function (name /*...args*/) {
+    return this.dispatch("post", [name, array_slice(arguments, 1)]);
+};
+
+/**
+ * Applies the promised function in a future turn.
+ * @param object    promise or immediate reference for target function
+ * @param args      array of application arguments
+ */
+Q.fapply = function (object, args) {
+    return Q(object).dispatch("apply", [void 0, args]);
+};
+
+Promise.prototype.fapply = function (args) {
+    return this.dispatch("apply", [void 0, args]);
+};
+
+/**
+ * Calls the promised function in a future turn.
+ * @param object    promise or immediate reference for target function
+ * @param ...args   array of application arguments
+ */
+Q["try"] =
+Q.fcall = function (object /* ...args*/) {
+    return Q(object).dispatch("apply", [void 0, array_slice(arguments, 1)]);
+};
+
+Promise.prototype.fcall = function (/*...args*/) {
+    return this.dispatch("apply", [void 0, array_slice(arguments)]);
+};
+
+/**
+ * Binds the promised function, transforming return values into a fulfilled
+ * promise and thrown errors into a rejected one.
+ * @param object    promise or immediate reference for target function
+ * @param ...args   array of application arguments
+ */
+Q.fbind = function (object /*...args*/) {
+    var promise = Q(object);
+    var args = array_slice(arguments, 1);
+    return function fbound() {
+        return promise.dispatch("apply", [
+            this,
+            args.concat(array_slice(arguments))
+        ]);
+    };
+};
+Promise.prototype.fbind = function (/*...args*/) {
+    var promise = this;
+    var args = array_slice(arguments);
+    return function fbound() {
+        return promise.dispatch("apply", [
+            this,
+            args.concat(array_slice(arguments))
+        ]);
+    };
+};
+
+/**
+ * Requests the names of the owned properties of a promised
+ * object in a future turn.
+ * @param object    promise or immediate reference for target object
+ * @return promise for the keys of the eventually settled object
+ */
+Q.keys = function (object) {
+    return Q(object).dispatch("keys", []);
+};
+
+Promise.prototype.keys = function () {
+    return this.dispatch("keys", []);
+};
+
+/**
+ * Turns an array of promises into a promise for an array.  If any of
+ * the promises gets rejected, the whole array is rejected immediately.
+ * @param {Array*} an array (or promise for an array) of values (or
+ * promises for values)
+ * @returns a promise for an array of the corresponding values
+ */
+// By Mark Miller
+// http://wiki.ecmascript.org/doku.php?id=strawman:concurrency&rev=1308776521#allfulfilled
+Q.all = all;
+function all(promises) {
+    return when(promises, function (promises) {
+        var pendingCount = 0;
+        var deferred = defer();
+        array_reduce(promises, function (undefined, promise, index) {
+            var snapshot;
+            if (
+                isPromise(promise) &&
+                (snapshot = promise.inspect()).state === "fulfilled"
+            ) {
+                promises[index] = snapshot.value;
+            } else {
+                ++pendingCount;
+                when(
+                    promise,
+                    function (value) {
+                        promises[index] = value;
+                        if (--pendingCount === 0) {
+                            deferred.resolve(promises);
+                        }
+                    },
+                    deferred.reject,
+                    function (progress) {
+                        deferred.notify({ index: index, value: progress });
+                    }
+                );
+            }
+        }, void 0);
+        if (pendingCount === 0) {
+            deferred.resolve(promises);
+        }
+        return deferred.promise;
+    });
+}
+
+Promise.prototype.all = function () {
+    return all(this);
+};
+
+/**
+ * Returns the first resolved promise of an array. Prior rejected promises are
+ * ignored.  Rejects only if all promises are rejected.
+ * @param {Array*} an array containing values or promises for values
+ * @returns a promise fulfilled with the value of the first resolved promise,
+ * or a rejected promise if all promises are rejected.
+ */
+Q.any = any;
+
+function any(promises) {
+    if (promises.length === 0) {
+        return Q.resolve();
+    }
+
+    var deferred = Q.defer();
+    var pendingCount = 0;
+    array_reduce(promises, function (prev, current, index) {
+        var promise = promises[index];
+
+        pendingCount++;
+
+        when(promise, onFulfilled, onRejected, onProgress);
+        function onFulfilled(result) {
+            deferred.resolve(result);
+        }
+        function onRejected() {
+            pendingCount--;
+            if (pendingCount === 0) {
+                deferred.reject(new Error(
+                    "Can't get fulfillment value from any promise, all " +
+                    "promises were rejected."
+                ));
+            }
+        }
+        function onProgress(progress) {
+            deferred.notify({
+                index: index,
+                value: progress
+            });
+        }
+    }, undefined);
+
+    return deferred.promise;
+}
+
+Promise.prototype.any = function () {
+    return any(this);
+};
+
+/**
+ * Waits for all promises to be settled, either fulfilled or
+ * rejected.  This is distinct from `all` since that would stop
+ * waiting at the first rejection.  The promise returned by
+ * `allResolved` will never be rejected.
+ * @param promises a promise for an array (or an array) of promises
+ * (or values)
+ * @return a promise for an array of promises
+ */
+Q.allResolved = deprecate(allResolved, "allResolved", "allSettled");
+function allResolved(promises) {
+    return when(promises, function (promises) {
+        promises = array_map(promises, Q);
+        return when(all(array_map(promises, function (promise) {
+            return when(promise, noop, noop);
+        })), function () {
+            return promises;
+        });
+    });
+}
+
+Promise.prototype.allResolved = function () {
+    return allResolved(this);
+};
+
+/**
+ * @see Promise#allSettled
+ */
+Q.allSettled = allSettled;
+function allSettled(promises) {
+    return Q(promises).allSettled();
+}
+
+/**
+ * Turns an array of promises into a promise for an array of their states (as
+ * returned by `inspect`) when they have all settled.
+ * @param {Array[Any*]} values an array (or promise for an array) of values (or
+ * promises for values)
+ * @returns {Array[State]} an array of states for the respective values.
+ */
+Promise.prototype.allSettled = function () {
+    return this.then(function (promises) {
+        return all(array_map(promises, function (promise) {
+            promise = Q(promise);
+            function regardless() {
+                return promise.inspect();
+            }
+            return promise.then(regardless, regardless);
+        }));
+    });
+};
+
+/**
+ * Captures the failure of a promise, giving an oportunity to recover
+ * with a callback.  If the given promise is fulfilled, the returned
+ * promise is fulfilled.
+ * @param {Any*} promise for something
+ * @param {Function} callback to fulfill the returned promise if the
+ * given promise is rejected
+ * @returns a promise for the return value of the callback
+ */
+Q.fail = // XXX legacy
+Q["catch"] = function (object, rejected) {
+    return Q(object).then(void 0, rejected);
+};
+
+Promise.prototype.fail = // XXX legacy
+Promise.prototype["catch"] = function (rejected) {
+    return this.then(void 0, rejected);
+};
+
+/**
+ * Attaches a listener that can respond to progress notifications from a
+ * promise's originating deferred. This listener receives the exact arguments
+ * passed to ``deferred.notify``.
+ * @param {Any*} promise for something
+ * @param {Function} callback to receive any progress notifications
+ * @returns the given promise, unchanged
+ */
+Q.progress = progress;
+function progress(object, progressed) {
+    return Q(object).then(void 0, void 0, progressed);
+}
+
+Promise.prototype.progress = function (progressed) {
+    return this.then(void 0, void 0, progressed);
+};
+
+/**
+ * Provides an opportunity to observe the settling of a promise,
+ * regardless of whether the promise is fulfilled or rejected.  Forwards
+ * the resolution to the returned promise when the callback is done.
+ * The callback can return a promise to defer completion.
+ * @param {Any*} promise
+ * @param {Function} callback to observe the resolution of the given
+ * promise, takes no arguments.
+ * @returns a promise for the resolution of the given promise when
+ * ``fin`` is done.
+ */
+Q.fin = // XXX legacy
+Q["finally"] = function (object, callback) {
+    return Q(object)["finally"](callback);
+};
+
+Promise.prototype.fin = // XXX legacy
+Promise.prototype["finally"] = function (callback) {
+    callback = Q(callback);
+    return this.then(function (value) {
+        return callback.fcall().then(function () {
+            return value;
+        });
+    }, function (reason) {
+        // TODO attempt to recycle the rejection with "this".
+        return callback.fcall().then(function () {
+            throw reason;
+        });
+    });
+};
+
+/**
+ * Terminates a chain of promises, forcing rejections to be
+ * thrown as exceptions.
+ * @param {Any*} promise at the end of a chain of promises
+ * @returns nothing
+ */
+Q.done = function (object, fulfilled, rejected, progress) {
+    return Q(object).done(fulfilled, rejected, progress);
+};
+
+Promise.prototype.done = function (fulfilled, rejected, progress) {
+    var onUnhandledError = function (error) {
+        // forward to a future turn so that ``when``
+        // does not catch it and turn it into a rejection.
+        Q.nextTick(function () {
+            makeStackTraceLong(error, promise);
+            if (Q.onerror) {
+                Q.onerror(error);
+            } else {
+                throw error;
+            }
+        });
+    };
+
+    // Avoid unnecessary `nextTick`ing via an unnecessary `when`.
+    var promise = fulfilled || rejected || progress ?
+        this.then(fulfilled, rejected, progress) :
+        this;
+
+    if (typeof process === "object" && process && process.domain) {
+        onUnhandledError = process.domain.bind(onUnhandledError);
+    }
+
+    promise.then(void 0, onUnhandledError);
+};
+
+/**
+ * Causes a promise to be rejected if it does not get fulfilled before
+ * some milliseconds time out.
+ * @param {Any*} promise
+ * @param {Number} milliseconds timeout
+ * @param {Any*} custom error message or Error object (optional)
+ * @returns a promise for the resolution of the given promise if it is
+ * fulfilled before the timeout, otherwise rejected.
+ */
+Q.timeout = function (object, ms, error) {
+    return Q(object).timeout(ms, error);
+};
+
+Promise.prototype.timeout = function (ms, error) {
+    var deferred = defer();
+    var timeoutId = setTimeout(function () {
+        if (!error || "string" === typeof error) {
+            error = new Error(error || "Timed out after " + ms + " ms");
+            error.code = "ETIMEDOUT";
+        }
+        deferred.reject(error);
+    }, ms);
+
+    this.then(function (value) {
+        clearTimeout(timeoutId);
+        deferred.resolve(value);
+    }, function (exception) {
+        clearTimeout(timeoutId);
+        deferred.reject(exception);
+    }, deferred.notify);
+
+    return deferred.promise;
+};
+
+/**
+ * Returns a promise for the given value (or promised value), some
+ * milliseconds after it resolved. Passes rejections immediately.
+ * @param {Any*} promise
+ * @param {Number} milliseconds
+ * @returns a promise for the resolution of the given promise after milliseconds
+ * time has elapsed since the resolution of the given promise.
+ * If the given promise rejects, that is passed immediately.
+ */
+Q.delay = function (object, timeout) {
+    if (timeout === void 0) {
+        timeout = object;
+        object = void 0;
+    }
+    return Q(object).delay(timeout);
+};
+
+Promise.prototype.delay = function (timeout) {
+    return this.then(function (value) {
+        var deferred = defer();
+        setTimeout(function () {
+            deferred.resolve(value);
+        }, timeout);
+        return deferred.promise;
+    });
+};
+
+/**
+ * Passes a continuation to a Node function, which is called with the given
+ * arguments provided as an array, and returns a promise.
+ *
+ *      Q.nfapply(FS.readFile, [__filename])
+ *      .then(function (content) {
+ *      })
+ *
+ */
+Q.nfapply = function (callback, args) {
+    return Q(callback).nfapply(args);
+};
+
+Promise.prototype.nfapply = function (args) {
+    var deferred = defer();
+    var nodeArgs = array_slice(args);
+    nodeArgs.push(deferred.makeNodeResolver());
+    this.fapply(nodeArgs).fail(deferred.reject);
+    return deferred.promise;
+};
+
+/**
+ * Passes a continuation to a Node function, which is called with the given
+ * arguments provided individually, and returns a promise.
+ * @example
+ * Q.nfcall(FS.readFile, __filename)
+ * .then(function (content) {
+ * })
+ *
+ */
+Q.nfcall = function (callback /*...args*/) {
+    var args = array_slice(arguments, 1);
+    return Q(callback).nfapply(args);
+};
+
+Promise.prototype.nfcall = function (/*...args*/) {
+    var nodeArgs = array_slice(arguments);
+    var deferred = defer();
+    nodeArgs.push(deferred.makeNodeResolver());
+    this.fapply(nodeArgs).fail(deferred.reject);
+    return deferred.promise;
+};
+
+/**
+ * Wraps a NodeJS continuation passing function and returns an equivalent
+ * version that returns a promise.
+ * @example
+ * Q.nfbind(FS.readFile, __filename)("utf-8")
+ * .then(console.log)
+ * .done()
+ */
+Q.nfbind =
+Q.denodeify = function (callback /*...args*/) {
+    var baseArgs = array_slice(arguments, 1);
+    return function () {
+        var nodeArgs = baseArgs.concat(array_slice(arguments));
+        var deferred = defer();
+        nodeArgs.push(deferred.makeNodeResolver());
+        Q(callback).fapply(nodeArgs).fail(deferred.reject);
+        return deferred.promise;
+    };
+};
+
+Promise.prototype.nfbind =
+Promise.prototype.denodeify = function (/*...args*/) {
+    var args = array_slice(arguments);
+    args.unshift(this);
+    return Q.denodeify.apply(void 0, args);
+};
+
+Q.nbind = function (callback, thisp /*...args*/) {
+    var baseArgs = array_slice(arguments, 2);
+    return function () {
+        var nodeArgs = baseArgs.concat(array_slice(arguments));
+        var deferred = defer();
+        nodeArgs.push(deferred.makeNodeResolver());
+        function bound() {
+            return callback.apply(thisp, arguments);
+        }
+        Q(bound).fapply(nodeArgs).fail(deferred.reject);
+        return deferred.promise;
+    };
+};
+
+Promise.prototype.nbind = function (/*thisp, ...args*/) {
+    var args = array_slice(arguments, 0);
+    args.unshift(this);
+    return Q.nbind.apply(void 0, args);
+};
+
+/**
+ * Calls a method of a Node-style object that accepts a Node-style
+ * callback with a given array of arguments, plus a provided callback.
+ * @param object an object that has the named method
+ * @param {String} name name of the method of object
+ * @param {Array} args arguments to pass to the method; the callback
+ * will be provided by Q and appended to these arguments.
+ * @returns a promise for the value or error
+ */
+Q.nmapply = // XXX As proposed by "Redsandro"
+Q.npost = function (object, name, args) {
+    return Q(object).npost(name, args);
+};
+
+Promise.prototype.nmapply = // XXX As proposed by "Redsandro"
+Promise.prototype.npost = function (name, args) {
+    var nodeArgs = array_slice(args || []);
+    var deferred = defer();
+    nodeArgs.push(deferred.makeNodeResolver());
+    this.dispatch("post", [name, nodeArgs]).fail(deferred.reject);
+    return deferred.promise;
+};
+
+/**
+ * Calls a method of a Node-style object that accepts a Node-style
+ * callback, forwarding the given variadic arguments, plus a provided
+ * callback argument.
+ * @param object an object that has the named method
+ * @param {String} name name of the method of object
+ * @param ...args arguments to pass to the method; the callback will
+ * be provided by Q and appended to these arguments.
+ * @returns a promise for the value or error
+ */
+Q.nsend = // XXX Based on Mark Miller's proposed "send"
+Q.nmcall = // XXX Based on "Redsandro's" proposal
+Q.ninvoke = function (object, name /*...args*/) {
+    var nodeArgs = array_slice(arguments, 2);
+    var deferred = defer();
+    nodeArgs.push(deferred.makeNodeResolver());
+    Q(object).dispatch("post", [name, nodeArgs]).fail(deferred.reject);
+    return deferred.promise;
+};
+
+Promise.prototype.nsend = // XXX Based on Mark Miller's proposed "send"
+Promise.prototype.nmcall = // XXX Based on "Redsandro's" proposal
+Promise.prototype.ninvoke = function (name /*...args*/) {
+    var nodeArgs = array_slice(arguments, 1);
+    var deferred = defer();
+    nodeArgs.push(deferred.makeNodeResolver());
+    this.dispatch("post", [name, nodeArgs]).fail(deferred.reject);
+    return deferred.promise;
+};
+
+/**
+ * If a function would like to support both Node continuation-passing-style and
+ * promise-returning-style, it can end its internal promise chain with
+ * `nodeify(nodeback)`, forwarding the optional nodeback argument.  If the user
+ * elects to use a nodeback, the result will be sent there.  If they do not
+ * pass a nodeback, they will receive the result promise.
+ * @param object a result (or a promise for a result)
+ * @param {Function} nodeback a Node.js-style callback
+ * @returns either the promise or nothing
+ */
+Q.nodeify = nodeify;
+function nodeify(object, nodeback) {
+    return Q(object).nodeify(nodeback);
+}
+
+Promise.prototype.nodeify = function (nodeback) {
+    if (nodeback) {
+        this.then(function (value) {
+            Q.nextTick(function () {
+                nodeback(null, value);
+            });
+        }, function (error) {
+            Q.nextTick(function () {
+                nodeback(error);
+            });
+        });
+    } else {
+        return this;
+    }
+};
+
+Q.noConflict = function() {
+    throw new Error("Q.noConflict only works when Q is used as a global");
+};
+
+// All code before this point will be filtered from stack traces.
+var qEndingLine = captureLine();
+
+return Q;
+
+});
+
+}).call(this,require('_process'))
+},{"_process":27}],9:[function(require,module,exports){
 !function(e,t,n){"use strict";!function o(e,t,n){function a(s,l){if(!t[s]){if(!e[s]){var i="function"==typeof require&&require;if(!l&&i)return i(s,!0);if(r)return r(s,!0);var u=new Error("Cannot find module '"+s+"'");throw u.code="MODULE_NOT_FOUND",u}var c=t[s]={exports:{}};e[s][0].call(c.exports,function(t){var n=e[s][1][t];return a(n?n:t)},c,c.exports,o,e,t,n)}return t[s].exports}for(var r="function"==typeof require&&require,s=0;s<n.length;s++)a(n[s]);return a}({1:[function(o){var a,r,s,l,i=function(e){return e&&e.__esModule?e:{"default":e}},u=o("./modules/handle-dom"),c=o("./modules/utils"),d=o("./modules/handle-swal-dom"),f=o("./modules/handle-click"),p=o("./modules/handle-key"),m=i(p),v=o("./modules/default-params"),y=i(v),h=o("./modules/set-params"),g=i(h);s=l=function(){function o(e){var t=s;return t[e]===n?y["default"][e]:t[e]}var s=arguments[0];if(u.addClass(t.body,"stop-scrolling"),d.resetInput(),s===n)return c.logStr("SweetAlert expects at least 1 attribute!"),!1;var l=c.extend({},y["default"]);switch(typeof s){case"string":l.title=s,l.text=arguments[1]||"",l.type=arguments[2]||"";break;case"object":if(s.title===n)return c.logStr('Missing "title" argument!'),!1;l.title=s.title;for(var i in y["default"])l[i]=o(i);l.confirmButtonText=l.showCancelButton?"Confirm":y["default"].confirmButtonText,l.confirmButtonText=o("confirmButtonText"),l.doneFunction=arguments[1]||null;break;default:return c.logStr('Unexpected type of argument! Expected "string" or "object", got '+typeof s),!1}g["default"](l),d.fixVerticalPosition(),d.openModal(arguments[1]);for(var p=d.getModal(),v=p.querySelectorAll("button"),h=["onclick","onmouseover","onmouseout","onmousedown","onmouseup","onfocus"],b=function(e){return f.handleButton(e,l,p)},w=0;w<v.length;w++)for(var C=0;C<h.length;C++){var S=h[C];v[w][S]=b}d.getOverlay().onclick=b,a=e.onkeydown;var x=function(e){return m["default"](e,l,p)};e.onkeydown=x,e.onfocus=function(){setTimeout(function(){r!==n&&(r.focus(),r=n)},0)}},s.setDefaults=l.setDefaults=function(e){if(!e)throw new Error("userParams is required");if("object"!=typeof e)throw new Error("userParams has to be a object");c.extend(y["default"],e)},s.close=l.close=function(){var o=d.getModal();u.fadeOut(d.getOverlay(),5),u.fadeOut(o,5),u.removeClass(o,"showSweetAlert"),u.addClass(o,"hideSweetAlert"),u.removeClass(o,"visible");var s=o.querySelector(".sa-icon.sa-success");u.removeClass(s,"animate"),u.removeClass(s.querySelector(".sa-tip"),"animateSuccessTip"),u.removeClass(s.querySelector(".sa-long"),"animateSuccessLong");var l=o.querySelector(".sa-icon.sa-error");u.removeClass(l,"animateErrorIcon"),u.removeClass(l.querySelector(".sa-x-mark"),"animateXMark");var i=o.querySelector(".sa-icon.sa-warning");return u.removeClass(i,"pulseWarning"),u.removeClass(i.querySelector(".sa-body"),"pulseWarningIns"),u.removeClass(i.querySelector(".sa-dot"),"pulseWarningIns"),setTimeout(function(){var e=o.getAttribute("data-custom-class");u.removeClass(o,e)},300),u.removeClass(t.body,"stop-scrolling"),e.onkeydown=a,e.previousActiveElement&&e.previousActiveElement.focus(),r=n,clearTimeout(o.timeout),!0},s.showInputError=l.showInputError=function(e){var t=d.getModal(),n=t.querySelector(".sa-input-error");u.addClass(n,"show");var o=t.querySelector(".sa-error-container");u.addClass(o,"show"),o.querySelector("p").innerHTML=e,t.querySelector("input").focus()},s.resetInputError=l.resetInputError=function(e){if(e&&13===e.keyCode)return!1;var t=d.getModal(),n=t.querySelector(".sa-input-error");u.removeClass(n,"show");var o=t.querySelector(".sa-error-container");u.removeClass(o,"show")},"undefined"!=typeof e?e.sweetAlert=e.swal=s:c.logStr("SweetAlert is a frontend module!")},{"./modules/default-params":2,"./modules/handle-click":3,"./modules/handle-dom":4,"./modules/handle-key":5,"./modules/handle-swal-dom":6,"./modules/set-params":8,"./modules/utils":9}],2:[function(e,t,n){Object.defineProperty(n,"__esModule",{value:!0});var o={title:"",text:"",type:null,allowOutsideClick:!1,showConfirmButton:!0,showCancelButton:!1,closeOnConfirm:!0,closeOnCancel:!0,confirmButtonText:"OK",confirmButtonColor:"#AEDEF4",cancelButtonText:"Cancel",imageUrl:null,imageSize:null,timer:null,customClass:"",html:!1,animation:!0,allowEscapeKey:!0,inputType:"text",inputPlaceholder:"",inputValue:""};n["default"]=o,t.exports=n["default"]},{}],3:[function(t,n,o){Object.defineProperty(o,"__esModule",{value:!0});var a=t("./utils"),r=(t("./handle-swal-dom"),t("./handle-dom")),s=function(t,n,o){function s(e){m&&n.confirmButtonColor&&(p.style.backgroundColor=e)}var u,c,d,f=t||e.event,p=f.target||f.srcElement,m=-1!==p.className.indexOf("confirm"),v=-1!==p.className.indexOf("sweet-overlay"),y=r.hasClass(o,"visible"),h=n.doneFunction&&"true"===o.getAttribute("data-has-done-function");switch(m&&n.confirmButtonColor&&(u=n.confirmButtonColor,c=a.colorLuminance(u,-.04),d=a.colorLuminance(u,-.14)),f.type){case"mouseover":s(c);break;case"mouseout":s(u);break;case"mousedown":s(d);break;case"mouseup":s(c);break;case"focus":var g=o.querySelector("button.confirm"),b=o.querySelector("button.cancel");m?b.style.boxShadow="none":g.style.boxShadow="none";break;case"click":var w=o===p,C=r.isDescendant(o,p);if(!w&&!C&&y&&!n.allowOutsideClick)break;m&&h&&y?l(o,n):h&&y||v?i(o,n):r.isDescendant(o,p)&&"BUTTON"===p.tagName&&sweetAlert.close()}},l=function(e,t){var n=!0;r.hasClass(e,"show-input")&&(n=e.querySelector("input").value,n||(n="")),t.doneFunction(n),t.closeOnConfirm&&sweetAlert.close()},i=function(e,t){var n=String(t.doneFunction).replace(/\s/g,""),o="function("===n.substring(0,9)&&")"!==n.substring(9,10);o&&t.doneFunction(!1),t.closeOnCancel&&sweetAlert.close()};o["default"]={handleButton:s,handleConfirm:l,handleCancel:i},n.exports=o["default"]},{"./handle-dom":4,"./handle-swal-dom":6,"./utils":9}],4:[function(n,o,a){Object.defineProperty(a,"__esModule",{value:!0});var r=function(e,t){return new RegExp(" "+t+" ").test(" "+e.className+" ")},s=function(e,t){r(e,t)||(e.className+=" "+t)},l=function(e,t){var n=" "+e.className.replace(/[\t\r\n]/g," ")+" ";if(r(e,t)){for(;n.indexOf(" "+t+" ")>=0;)n=n.replace(" "+t+" "," ");e.className=n.replace(/^\s+|\s+$/g,"")}},i=function(e){var n=t.createElement("div");return n.appendChild(t.createTextNode(e)),n.innerHTML},u=function(e){e.style.opacity="",e.style.display="block"},c=function(e){if(e&&!e.length)return u(e);for(var t=0;t<e.length;++t)u(e[t])},d=function(e){e.style.opacity="",e.style.display="none"},f=function(e){if(e&&!e.length)return d(e);for(var t=0;t<e.length;++t)d(e[t])},p=function(e,t){for(var n=t.parentNode;null!==n;){if(n===e)return!0;n=n.parentNode}return!1},m=function(e){e.style.left="-9999px",e.style.display="block";var t,n=e.clientHeight;return t="undefined"!=typeof getComputedStyle?parseInt(getComputedStyle(e).getPropertyValue("padding-top"),10):parseInt(e.currentStyle.padding),e.style.left="",e.style.display="none","-"+parseInt((n+t)/2)+"px"},v=function(e,t){if(+e.style.opacity<1){t=t||16,e.style.opacity=0,e.style.display="block";var n=+new Date,o=function(e){function t(){return e.apply(this,arguments)}return t.toString=function(){return e.toString()},t}(function(){e.style.opacity=+e.style.opacity+(new Date-n)/100,n=+new Date,+e.style.opacity<1&&setTimeout(o,t)});o()}e.style.display="block"},y=function(e,t){t=t||16,e.style.opacity=1;var n=+new Date,o=function(e){function t(){return e.apply(this,arguments)}return t.toString=function(){return e.toString()},t}(function(){e.style.opacity=+e.style.opacity-(new Date-n)/100,n=+new Date,+e.style.opacity>0?setTimeout(o,t):e.style.display="none"});o()},h=function(n){if("function"==typeof MouseEvent){var o=new MouseEvent("click",{view:e,bubbles:!1,cancelable:!0});n.dispatchEvent(o)}else if(t.createEvent){var a=t.createEvent("MouseEvents");a.initEvent("click",!1,!1),n.dispatchEvent(a)}else t.createEventObject?n.fireEvent("onclick"):"function"==typeof n.onclick&&n.onclick()},g=function(t){"function"==typeof t.stopPropagation?(t.stopPropagation(),t.preventDefault()):e.event&&e.event.hasOwnProperty("cancelBubble")&&(e.event.cancelBubble=!0)};a.hasClass=r,a.addClass=s,a.removeClass=l,a.escapeHtml=i,a._show=u,a.show=c,a._hide=d,a.hide=f,a.isDescendant=p,a.getTopMargin=m,a.fadeIn=v,a.fadeOut=y,a.fireClick=h,a.stopEventPropagation=g},{}],5:[function(t,o,a){Object.defineProperty(a,"__esModule",{value:!0});var r=t("./handle-dom"),s=t("./handle-swal-dom"),l=function(t,o,a){var l=t||e.event,i=l.keyCode||l.which,u=a.querySelector("button.confirm"),c=a.querySelector("button.cancel"),d=a.querySelectorAll("button[tabindex]");if(-1!==[9,13,32,27].indexOf(i)){for(var f=l.target||l.srcElement,p=-1,m=0;m<d.length;m++)if(f===d[m]){p=m;break}9===i?(f=-1===p?u:p===d.length-1?d[0]:d[p+1],r.stopEventPropagation(l),f.focus(),o.confirmButtonColor&&s.setFocusStyle(f,o.confirmButtonColor)):13===i?("INPUT"===f.tagName&&(f=u,u.focus()),f=-1===p?u:n):27===i&&o.allowEscapeKey===!0?(f=c,r.fireClick(f,l)):f=n}};a["default"]=l,o.exports=a["default"]},{"./handle-dom":4,"./handle-swal-dom":6}],6:[function(n,o,a){var r=function(e){return e&&e.__esModule?e:{"default":e}};Object.defineProperty(a,"__esModule",{value:!0});var s=n("./utils"),l=n("./handle-dom"),i=n("./default-params"),u=r(i),c=n("./injected-html"),d=r(c),f=".sweet-alert",p=".sweet-overlay",m=function(){var e=t.createElement("div");for(e.innerHTML=d["default"];e.firstChild;)t.body.appendChild(e.firstChild)},v=function(e){function t(){return e.apply(this,arguments)}return t.toString=function(){return e.toString()},t}(function(){var e=t.querySelector(f);return e||(m(),e=v()),e}),y=function(){var e=v();return e?e.querySelector("input"):void 0},h=function(){return t.querySelector(p)},g=function(e,t){var n=s.hexToRgb(t);e.style.boxShadow="0 0 2px rgba("+n+", 0.8), inset 0 0 0 1px rgba(0, 0, 0, 0.05)"},b=function(n){var o=v();l.fadeIn(h(),10),l.show(o),l.addClass(o,"showSweetAlert"),l.removeClass(o,"hideSweetAlert"),e.previousActiveElement=t.activeElement;var a=o.querySelector("button.confirm");a.focus(),setTimeout(function(){l.addClass(o,"visible")},500);var r=o.getAttribute("data-timer");if("null"!==r&&""!==r){var s=n;o.timeout=setTimeout(function(){var e=(s||null)&&"true"===o.getAttribute("data-has-done-function");e?s(null):sweetAlert.close()},r)}},w=function(){var e=v(),t=y();l.removeClass(e,"show-input"),t.value=u["default"].inputValue,t.setAttribute("type",u["default"].inputType),t.setAttribute("placeholder",u["default"].inputPlaceholder),C()},C=function(e){if(e&&13===e.keyCode)return!1;var t=v(),n=t.querySelector(".sa-input-error");l.removeClass(n,"show");var o=t.querySelector(".sa-error-container");l.removeClass(o,"show")},S=function(){var e=v();e.style.marginTop=l.getTopMargin(v())};a.sweetAlertInitialize=m,a.getModal=v,a.getOverlay=h,a.getInput=y,a.setFocusStyle=g,a.openModal=b,a.resetInput=w,a.resetInputError=C,a.fixVerticalPosition=S},{"./default-params":2,"./handle-dom":4,"./injected-html":7,"./utils":9}],7:[function(e,t,n){Object.defineProperty(n,"__esModule",{value:!0});var o='<div class="sweet-overlay" tabIndex="-1"></div><div class="sweet-alert"><div class="sa-icon sa-error">\n      <span class="sa-x-mark">\n        <span class="sa-line sa-left"></span>\n        <span class="sa-line sa-right"></span>\n      </span>\n    </div><div class="sa-icon sa-warning">\n      <span class="sa-body"></span>\n      <span class="sa-dot"></span>\n    </div><div class="sa-icon sa-info"></div><div class="sa-icon sa-success">\n      <span class="sa-line sa-tip"></span>\n      <span class="sa-line sa-long"></span>\n\n      <div class="sa-placeholder"></div>\n      <div class="sa-fix"></div>\n    </div><div class="sa-icon sa-custom"></div><h2>Title</h2>\n    <p>Text</p>\n    <fieldset>\n      <input type="text" tabIndex="3" />\n      <div class="sa-input-error"></div>\n    </fieldset><div class="sa-error-container">\n      <div class="icon">!</div>\n      <p>Not valid!</p>\n    </div><div class="sa-button-container">\n      <button class="cancel" tabIndex="2">Cancel</button>\n      <button class="confirm" tabIndex="1">OK</button>\n    </div></div>';n["default"]=o,t.exports=n["default"]},{}],8:[function(e,t,o){Object.defineProperty(o,"__esModule",{value:!0});var a=e("./utils"),r=e("./handle-swal-dom"),s=e("./handle-dom"),l=["error","warning","info","success","input","prompt"],i=function(e){var t=r.getModal(),o=t.querySelector("h2"),i=t.querySelector("p"),u=t.querySelector("button.cancel"),c=t.querySelector("button.confirm");if(o.innerHTML=e.html?e.title:s.escapeHtml(e.title).split("\n").join("<br>"),i.innerHTML=e.html?e.text:s.escapeHtml(e.text||"").split("\n").join("<br>"),e.text&&s.show(i),e.customClass)s.addClass(t,e.customClass),t.setAttribute("data-custom-class",e.customClass);else{var d=t.getAttribute("data-custom-class");s.removeClass(t,d),t.setAttribute("data-custom-class","")}if(s.hide(t.querySelectorAll(".sa-icon")),e.type&&!a.isIE8()){var f=function(){for(var o=!1,a=0;a<l.length;a++)if(e.type===l[a]){o=!0;break}if(!o)return logStr("Unknown alert type: "+e.type),{v:!1};var i=["success","error","warning","info"],u=n;-1!==i.indexOf(e.type)&&(u=t.querySelector(".sa-icon.sa-"+e.type),s.show(u));var c=r.getInput();switch(e.type){case"success":s.addClass(u,"animate"),s.addClass(u.querySelector(".sa-tip"),"animateSuccessTip"),s.addClass(u.querySelector(".sa-long"),"animateSuccessLong");break;case"error":s.addClass(u,"animateErrorIcon"),s.addClass(u.querySelector(".sa-x-mark"),"animateXMark");break;case"warning":s.addClass(u,"pulseWarning"),s.addClass(u.querySelector(".sa-body"),"pulseWarningIns"),s.addClass(u.querySelector(".sa-dot"),"pulseWarningIns");break;case"input":case"prompt":c.setAttribute("type",e.inputType),c.value=e.inputValue,c.setAttribute("placeholder",e.inputPlaceholder),s.addClass(t,"show-input"),setTimeout(function(){c.focus(),c.addEventListener("keyup",swal.resetInputError)},400)}}();if("object"==typeof f)return f.v}if(e.imageUrl){var p=t.querySelector(".sa-icon.sa-custom");p.style.backgroundImage="url("+e.imageUrl+")",s.show(p);var m=80,v=80;if(e.imageSize){var y=e.imageSize.toString().split("x"),h=y[0],g=y[1];h&&g?(m=h,v=g):logStr("Parameter imageSize expects value with format WIDTHxHEIGHT, got "+e.imageSize)}p.setAttribute("style",p.getAttribute("style")+"width:"+m+"px; height:"+v+"px")}t.setAttribute("data-has-cancel-button",e.showCancelButton),e.showCancelButton?u.style.display="inline-block":s.hide(u),t.setAttribute("data-has-confirm-button",e.showConfirmButton),e.showConfirmButton?c.style.display="inline-block":s.hide(c),e.cancelButtonText&&(u.innerHTML=s.escapeHtml(e.cancelButtonText)),e.confirmButtonText&&(c.innerHTML=s.escapeHtml(e.confirmButtonText)),e.confirmButtonColor&&(c.style.backgroundColor=e.confirmButtonColor,r.setFocusStyle(c,e.confirmButtonColor)),t.setAttribute("data-allow-outside-click",e.allowOutsideClick);var b=e.doneFunction?!0:!1;t.setAttribute("data-has-done-function",b),e.animation?"string"==typeof e.animation?t.setAttribute("data-animation",e.animation):t.setAttribute("data-animation","pop"):t.setAttribute("data-animation","none"),t.setAttribute("data-timer",e.timer)};o["default"]=i,t.exports=o["default"]},{"./handle-dom":4,"./handle-swal-dom":6,"./utils":9}],9:[function(t,n,o){Object.defineProperty(o,"__esModule",{value:!0});var a=function(e,t){for(var n in t)t.hasOwnProperty(n)&&(e[n]=t[n]);return e},r=function(e){var t=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(e);return t?parseInt(t[1],16)+", "+parseInt(t[2],16)+", "+parseInt(t[3],16):null},s=function(){return e.attachEvent&&!e.addEventListener},l=function(t){e.console&&e.console.log("SweetAlert: "+t)},i=function(e,t){e=String(e).replace(/[^0-9a-f]/gi,""),e.length<6&&(e=e[0]+e[0]+e[1]+e[1]+e[2]+e[2]),t=t||0;var n,o,a="#";for(o=0;3>o;o++)n=parseInt(e.substr(2*o,2),16),n=Math.round(Math.min(Math.max(0,n+n*t),255)).toString(16),a+=("00"+n).substr(n.length);return a};o.extend=a,o.hexToRgb=r,o.isIE8=s,o.logStr=l,o.colorLuminance=i},{}]},{},[1]),"function"==typeof define&&define.amd?define(function(){return sweetAlert}):"undefined"!=typeof module&&module.exports&&(module.exports=sweetAlert)}(window,document);
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 /*!
  * eventie v1.0.6
  * event binding helper
@@ -17623,7 +19675,7 @@ if ( typeof define === 'function' && define.amd ) {
 
 })( window );
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 /*!
  * EventEmitter v4.2.11 - git.io/ee
  * Unlicense - http://unlicense.org/
@@ -18097,7 +20149,7 @@ if ( typeof define === 'function' && define.amd ) {
     }
 }.call(this));
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 /*!
  * Unipointer v1.1.0
  * base class for doing one thing with pointer event
@@ -18415,7 +20467,7 @@ return Unipointer;
 
 }));
 
-},{"eventie":9,"wolfy87-eventemitter":10}],12:[function(require,module,exports){
+},{"eventie":10,"wolfy87-eventemitter":11}],13:[function(require,module,exports){
 /*!
  * Tap listener v1.1.1
  * listens to taps
@@ -18537,9 +20589,9 @@ return TapListener;
 
 }));
 
-},{"unipointer":11}],13:[function(require,module,exports){
+},{"unipointer":12}],14:[function(require,module,exports){
 arguments[4][2][0].apply(exports,arguments)
-},{"dup":2}],14:[function(require,module,exports){
+},{"dup":2}],15:[function(require,module,exports){
 /**
  * vis.js
  * https://github.com/almende/vis
@@ -18585,7 +20637,7 @@ this.positionedNodes[n.id]=!0,this._placeBranchNodes(n.id,e))}}}},{key:"_indexAr
 },centralGravity:{number:n},springLength:{number:n},springConstant:{number:n},damping:{number:n},avoidOverlap:{number:n},__type__:{object:r}},repulsion:{centralGravity:{number:n},springLength:{number:n},springConstant:{number:n},nodeDistance:{number:n},damping:{number:n},__type__:{object:r}},hierarchicalRepulsion:{centralGravity:{number:n},springLength:{number:n},springConstant:{number:n},nodeDistance:{number:n},damping:{number:n},__type__:{object:r}},maxVelocity:{number:n},minVelocity:{number:n},solver:{string:["barnesHut","repulsion","hierarchicalRepulsion","forceAtlas2Based"]},stabilization:{enabled:{"boolean":o},iterations:{number:n},updateInterval:{number:n},onlyDynamicEdges:{"boolean":o},fit:{"boolean":o},__type__:{object:r,"boolean":o}},timestep:{number:n},adaptiveTimestep:{"boolean":o},__type__:{object:r,"boolean":o}},autoResize:{"boolean":o},clickToUse:{"boolean":o},locale:{string:i},locales:{__any__:{any:h},__type__:{object:r}},height:{string:i},width:{string:i},__type__:{object:r}};d.groups.__any__=d.nodes,d.manipulation.controlNodeStyle=d.nodes;var l={nodes:{borderWidth:[1,0,10,1],borderWidthSelected:[2,0,10,1],color:{border:["color","#2B7CE9"],background:["color","#97C2FC"],highlight:{border:["color","#2B7CE9"],background:["color","#D2E5FF"]},hover:{border:["color","#2B7CE9"],background:["color","#D2E5FF"]}},fixed:{x:!1,y:!1},font:{color:["color","#343434"],size:[14,0,100,1],face:["arial","verdana","tahoma"],background:["color","none"],strokeWidth:[0,0,50,1],strokeColor:["color","#ffffff"]},hidden:!1,labelHighlightBold:!0,physics:!0,scaling:{min:[10,0,200,1],max:[30,0,200,1],label:{enabled:!1,min:[14,0,200,1],max:[30,0,200,1],maxVisible:[30,0,200,1],drawThreshold:[5,0,20,1]}},shadow:{enabled:!1,size:[10,0,20,1],x:[5,-30,30,1],y:[5,-30,30,1]},shape:["ellipse","box","circle","database","diamond","dot","square","star","text","triangle","triangleDown"],shapeProperties:{borderDashes:!1,borderRadius:[6,0,20,1],useImageSize:!1},size:[25,0,200,1]},edges:{arrows:{to:{enabled:!1,scaleFactor:[1,0,3,.05]},middle:{enabled:!1,scaleFactor:[1,0,3,.05]},from:{enabled:!1,scaleFactor:[1,0,3,.05]}},color:{color:["color","#848484"],highlight:["color","#848484"],hover:["color","#848484"],inherit:["from","to","both",!0,!1],opacity:[1,0,1,.05]},dashes:!1,font:{color:["color","#343434"],size:[14,0,100,1],face:["arial","verdana","tahoma"],background:["color","none"],strokeWidth:[2,0,50,1],strokeColor:["color","#ffffff"],align:["horizontal","top","middle","bottom"]},hidden:!1,hoverWidth:[1.5,0,5,.1],labelHighlightBold:!0,physics:!0,scaling:{min:[1,0,100,1],max:[15,0,100,1],label:{enabled:!0,min:[14,0,200,1],max:[30,0,200,1],maxVisible:[30,0,200,1],drawThreshold:[5,0,20,1]}},selectionWidth:[1.5,0,5,.1],selfReferenceSize:[20,0,200,1],shadow:{enabled:!1,size:[10,0,20,1],x:[5,-30,30,1],y:[5,-30,30,1]},smooth:{enabled:!0,type:["dynamic","continuous","discrete","diagonalCross","straightCross","horizontal","vertical","curvedCW","curvedCCW","cubicBezier"],forceDirection:["horizontal","vertical","none"],roundness:[.5,0,1,.05]},width:[1,0,30,1]},layout:{hierarchical:{enabled:!1,levelSeparation:[150,20,500,5],direction:["UD","DU","LR","RL"],sortMethod:["hubsize","directed"]}},interaction:{dragNodes:!0,dragView:!0,hideEdgesOnDrag:!1,hideNodesOnDrag:!1,hover:!1,keyboard:{enabled:!1,speed:{x:[10,0,40,1],y:[10,0,40,1],zoom:[.02,0,.1,.005]},bindToWindow:!0},multiselect:!1,navigationButtons:!1,selectable:!0,selectConnectedEdges:!0,hoverConnectedEdges:!0,tooltipDelay:[300,0,1e3,25],zoomView:!0},manipulation:{enabled:!1,initiallyActive:!1},physics:{enabled:!0,barnesHut:{gravitationalConstant:[-2e3,-3e4,0,50],centralGravity:[.3,0,10,.05],springLength:[95,0,500,5],springConstant:[.04,0,1.2,.005],damping:[.09,0,1,.01],avoidOverlap:[0,0,1,.01]},forceAtlas2Based:{gravitationalConstant:[-50,-500,0,1],centralGravity:[.01,0,1,.005],springLength:[95,0,500,5],springConstant:[.08,0,1.2,.005],damping:[.4,0,1,.01],avoidOverlap:[0,0,1,.01]},repulsion:{centralGravity:[.2,0,10,.05],springLength:[200,0,500,5],springConstant:[.05,0,1.2,.005],nodeDistance:[100,0,500,5],damping:[.09,0,1,.01]},hierarchicalRepulsion:{centralGravity:[.2,0,10,.05],springLength:[100,0,500,5],springConstant:[.01,0,1.2,.005],nodeDistance:[120,0,500,5],damping:[.09,0,1,.01]},maxVelocity:[50,0,150,1],minVelocity:[.1,.01,.5,.01],solver:["barnesHut","forceAtlas2Based","repulsion","hierarchicalRepulsion"],timestep:[.5,.01,1,.01]},global:{locale:["en","nl"]}};e.allOptions=d,e.configureOptions=l},function(t,e,i){function o(t){return t&&t.__esModule?t:{"default":t}}function n(t,e){if(!(t instanceof e))throw new TypeError("Cannot call a class as a function")}Object.defineProperty(e,"__esModule",{value:!0});var s=function(){function t(t,e){var i=[],o=!0,n=!1,s=void 0;try{for(var r,a=t[Symbol.iterator]();!(o=(r=a.next()).done)&&(i.push(r.value),!e||i.length!==e);o=!0);}catch(h){n=!0,s=h}finally{try{!o&&a["return"]&&a["return"]()}finally{if(n)throw s}}return i}return function(e,i){if(Array.isArray(e))return e;if(Symbol.iterator in Object(e))return t(e,i);throw new TypeError("Invalid attempt to destructure non-iterable instance")}}(),r=function(){function t(t,e){for(var i=0;i<e.length;i++){var o=e[i];o.enumerable=o.enumerable||!1,o.configurable=!0,"value"in o&&(o.writable=!0),Object.defineProperty(t,o.key,o)}}return function(e,i,o){return i&&t(e.prototype,i),o&&t(e,o),e}}(),a=i(112),h=o(a),d=function(){function t(e,i,o){n(this,t),this.body=e,this.springLength=i,this.springConstant=o,this.distanceSolver=new h["default"]}return r(t,[{key:"setOptions",value:function(t){t&&(t.springLength&&(this.springLength=t.springLength),t.springConstant&&(this.springConstant=t.springConstant))}},{key:"solve",value:function(t,e){var i=arguments.length<=2||void 0===arguments[2]?!1:arguments[2],o=this.distanceSolver.getDistances(this.body,t,e);this._createL_matrix(o),this._createK_matrix(o);for(var n=.01,r=1,a=0,h=Math.max(1e3,Math.min(10*this.body.nodeIndices.length,6e3)),d=5,l=1e9,u=0,c=0,p=0,f=0,m=0;l>n&&h>a;){a+=1;var v=this._getHighestEnergyNode(i),g=s(v,4);for(u=g[0],l=g[1],c=g[2],p=g[3],f=l,m=0;f>r&&d>m;){m+=1,this._moveNode(u,c,p);var y=this._getEnergy(u),b=s(y,3);f=b[0],c=b[1],p=b[2]}}}},{key:"_getHighestEnergyNode",value:function(t){for(var e=this.body.nodeIndices,i=this.body.nodes,o=0,n=e[0],r=0,a=0,h=0;h<e.length;h++){var d=e[h];if(i[d].predefinedPosition===!1||i[d].isCluster===!0&&t===!0||i[d].options.fixed.x===!0||i[d].options.fixed.y===!0){var l=this._getEnergy(d),u=s(l,3),c=u[0],p=u[1],f=u[2];c>o&&(o=c,n=d,r=p,a=f)}}return[n,o,r,a]}},{key:"_getEnergy",value:function(t){for(var e=this.body.nodeIndices,i=this.body.nodes,o=i[t].x,n=i[t].y,s=0,r=0,a=0;a<e.length;a++){var h=e[a];if(h!==t){var d=i[h].x,l=i[h].y,u=1/Math.sqrt(Math.pow(o-d,2)+Math.pow(n-l,2));s+=this.K_matrix[t][h]*(o-d-this.L_matrix[t][h]*(o-d)*u),r+=this.K_matrix[t][h]*(n-l-this.L_matrix[t][h]*(n-l)*u)}}var c=Math.sqrt(Math.pow(s,2)+Math.pow(r,2));return[c,s,r]}},{key:"_moveNode",value:function(t,e,i){for(var o=this.body.nodeIndices,n=this.body.nodes,s=0,r=0,a=0,h=n[t].x,d=n[t].y,l=0;l<o.length;l++){var u=o[l];if(u!==t){var c=n[u].x,p=n[u].y,f=1/Math.pow(Math.pow(h-c,2)+Math.pow(d-p,2),1.5);s+=this.K_matrix[t][u]*(1-this.L_matrix[t][u]*Math.pow(d-p,2)*f),r+=this.K_matrix[t][u]*(this.L_matrix[t][u]*(h-c)*(d-p)*f),a+=this.K_matrix[t][u]*(1-this.L_matrix[t][u]*Math.pow(h-c,2)*f)}}var m=s,v=r,g=e,y=a,b=i,w=(g/m+b/v)/(v/m-y/v),_=-(v*w+g)/m;n[t].x+=_,n[t].y+=w}},{key:"_createL_matrix",value:function(t){var e=this.body.nodeIndices,i=this.springLength;this.L_matrix=[];for(var o=0;o<e.length;o++){this.L_matrix[e[o]]={};for(var n=0;n<e.length;n++)this.L_matrix[e[o]][e[n]]=i*t[e[o]][e[n]]}}},{key:"_createK_matrix",value:function(t){var e=this.body.nodeIndices,i=this.springConstant;this.K_matrix=[];for(var o=0;o<e.length;o++){this.K_matrix[e[o]]={};for(var n=0;n<e.length;n++)this.K_matrix[e[o]][e[n]]=i*Math.pow(t[e[o]][e[n]],-2)}}}]),t}();e["default"]=d,t.exports=e["default"]},function(t,e){function i(t,e){if(!(t instanceof e))throw new TypeError("Cannot call a class as a function")}Object.defineProperty(e,"__esModule",{value:!0});var o=function(){function t(t,e){for(var i=0;i<e.length;i++){var o=e[i];o.enumerable=o.enumerable||!1,o.configurable=!0,"value"in o&&(o.writable=!0),Object.defineProperty(t,o.key,o)}}return function(e,i,o){return i&&t(e.prototype,i),o&&t(e,o),e}}(),n=function(){function t(){i(this,t)}return o(t,[{key:"getDistances",value:function(t,e,i){for(var o={},n=t.edges,s=0;s<e.length;s++){o[e[s]]={},o[e[s]]={};for(var r=0;r<e.length;r++)o[e[s]][e[r]]=s==r?0:1e9,o[e[s]][e[r]]=s==r?0:1e9}for(var s=0;s<i.length;s++){var a=n[i[s]];a.connected===!0&&void 0!==o[a.fromId]&&void 0!==o[a.toId]&&(o[a.fromId][a.toId]=1,o[a.toId][a.fromId]=1)}for(var h=e.length,d=0;h>d;d++)for(var s=0;h-1>s;s++)for(var r=s+1;h>r;r++)o[e[s]][e[r]]=Math.min(o[e[s]][e[r]],o[e[s]][e[d]]+o[e[d]][e[r]]),o[e[r]][e[s]]=o[e[s]][e[r]];return o}}]),t}();e["default"]=n,t.exports=e["default"]},function(t,e){"undefined"!=typeof CanvasRenderingContext2D&&(CanvasRenderingContext2D.prototype.circle=function(t,e,i){this.beginPath(),this.arc(t,e,i,0,2*Math.PI,!1),this.closePath()},CanvasRenderingContext2D.prototype.square=function(t,e,i){this.beginPath(),this.rect(t-i,e-i,2*i,2*i),this.closePath()},CanvasRenderingContext2D.prototype.triangle=function(t,e,i){this.beginPath(),i*=1.15,e+=.275*i;var o=2*i,n=o/2,s=Math.sqrt(3)/6*o,r=Math.sqrt(o*o-n*n);this.moveTo(t,e-(r-s)),this.lineTo(t+n,e+s),this.lineTo(t-n,e+s),this.lineTo(t,e-(r-s)),this.closePath()},CanvasRenderingContext2D.prototype.triangleDown=function(t,e,i){this.beginPath(),i*=1.15,e-=.275*i;var o=2*i,n=o/2,s=Math.sqrt(3)/6*o,r=Math.sqrt(o*o-n*n);this.moveTo(t,e+(r-s)),this.lineTo(t+n,e-s),this.lineTo(t-n,e-s),this.lineTo(t,e+(r-s)),this.closePath()},CanvasRenderingContext2D.prototype.star=function(t,e,i){this.beginPath(),i*=.82,e+=.1*i;for(var o=0;10>o;o++){var n=o%2===0?1.3*i:.5*i;this.lineTo(t+n*Math.sin(2*o*Math.PI/10),e-n*Math.cos(2*o*Math.PI/10))}this.closePath()},CanvasRenderingContext2D.prototype.diamond=function(t,e,i){this.beginPath(),this.lineTo(t,e+i),this.lineTo(t+i,e),this.lineTo(t,e-i),this.lineTo(t-i,e),this.closePath()},CanvasRenderingContext2D.prototype.roundRect=function(t,e,i,o,n){var s=Math.PI/180;0>i-2*n&&(n=i/2),0>o-2*n&&(n=o/2),this.beginPath(),this.moveTo(t+n,e),this.lineTo(t+i-n,e),this.arc(t+i-n,e+n,n,270*s,360*s,!1),this.lineTo(t+i,e+o-n),this.arc(t+i-n,e+o-n,n,0,90*s,!1),this.lineTo(t+n,e+o),this.arc(t+n,e+o-n,n,90*s,180*s,!1),this.lineTo(t,e+n),this.arc(t+n,e+n,n,180*s,270*s,!1),this.closePath()},CanvasRenderingContext2D.prototype.ellipse=function(t,e,i,o){var n=.5522848,s=i/2*n,r=o/2*n,a=t+i,h=e+o,d=t+i/2,l=e+o/2;this.beginPath(),this.moveTo(t,l),this.bezierCurveTo(t,l-r,d-s,e,d,e),this.bezierCurveTo(d+s,e,a,l-r,a,l),this.bezierCurveTo(a,l+r,d+s,h,d,h),this.bezierCurveTo(d-s,h,t,l+r,t,l),this.closePath()},CanvasRenderingContext2D.prototype.database=function(t,e,i,o){var n=1/3,s=i,r=o*n,a=.5522848,h=s/2*a,d=r/2*a,l=t+s,u=e+r,c=t+s/2,p=e+r/2,f=e+(o-r/2),m=e+o;this.beginPath(),this.moveTo(l,p),this.bezierCurveTo(l,p+d,c+h,u,c,u),this.bezierCurveTo(c-h,u,t,p+d,t,p),this.bezierCurveTo(t,p-d,c-h,e,c,e),this.bezierCurveTo(c+h,e,l,p-d,l,p),this.lineTo(l,f),this.bezierCurveTo(l,f+d,c+h,m,c,m),this.bezierCurveTo(c-h,m,t,f+d,t,f),this.lineTo(t,p)},CanvasRenderingContext2D.prototype.arrow=function(t,e,i,o){var n=t-o*Math.cos(i),s=e-o*Math.sin(i),r=t-.9*o*Math.cos(i),a=e-.9*o*Math.sin(i),h=n+o/3*Math.cos(i+.5*Math.PI),d=s+o/3*Math.sin(i+.5*Math.PI),l=n+o/3*Math.cos(i-.5*Math.PI),u=s+o/3*Math.sin(i-.5*Math.PI);this.beginPath(),this.moveTo(t,e),this.lineTo(h,d),this.lineTo(r,a),this.lineTo(l,u),this.closePath()},CanvasRenderingContext2D.prototype.dashedLine=function(t,e,i,o,n){this.beginPath(),this.moveTo(t,e);for(var s=n.length,r=i-t,a=o-e,h=a/r,d=Math.sqrt(r*r+a*a),l=0,u=!0,c=0,p=n[0];d>=.1;)p=n[l++%s],p>d&&(p=d),c=Math.sqrt(p*p/(1+h*h)),c=0>r?-c:c,t+=c,e+=h*c,u===!0?this.lineTo(t,e):this.moveTo(t,e),d-=p,u=!u})},function(t,e){function i(t){return P=t,p()}function o(){I=0,N=P.charAt(0)}function n(){I++,N=P.charAt(I)}function s(){return P.charAt(I+1)}function r(t){return A.test(t)}function a(t,e){if(t||(t={}),e)for(var i in e)e.hasOwnProperty(i)&&(t[i]=e[i]);return t}function h(t,e,i){for(var o=e.split("."),n=t;o.length;){var s=o.shift();o.length?(n[s]||(n[s]={}),n=n[s]):n[s]=i}}function d(t,e){for(var i,o,n=null,s=[t],r=t;r.parent;)s.push(r.parent),r=r.parent;if(r.nodes)for(i=0,o=r.nodes.length;o>i;i++)if(e.id===r.nodes[i].id){n=r.nodes[i];break}for(n||(n={id:e.id},t.node&&(n.attr=a(n.attr,t.node))),i=s.length-1;i>=0;i--){var h=s[i];h.nodes||(h.nodes=[]),-1===h.nodes.indexOf(n)&&h.nodes.push(n)}e.attr&&(n.attr=a(n.attr,e.attr))}function l(t,e){if(t.edges||(t.edges=[]),t.edges.push(e),t.edge){var i=a({},t.edge);e.attr=a(i,e.attr)}}function u(t,e,i,o,n){var s={from:e,to:i,type:o};return t.edge&&(s.attr=a({},t.edge)),s.attr=a(s.attr||{},n),s}function c(){for(L=E.NULL,z="";" "===N||"	"===N||"\n"===N||"\r"===N;)n();do{var t=!1;if("#"===N){for(var e=I-1;" "===P.charAt(e)||"	"===P.charAt(e);)e--;if("\n"===P.charAt(e)||""===P.charAt(e)){for(;""!=N&&"\n"!=N;)n();t=!0}}if("/"===N&&"/"===s()){for(;""!=N&&"\n"!=N;)n();t=!0}if("/"===N&&"*"===s()){for(;""!=N;){if("*"===N&&"/"===s()){n(),n();break}n()}t=!0}for(;" "===N||"	"===N||"\n"===N||"\r"===N;)n()}while(t);if(""===N)return void(L=E.DELIMITER);var i=N+s();if(S[i])return L=E.DELIMITER,z=i,n(),void n();if(S[N])return L=E.DELIMITER,z=N,void n();if(r(N)||"-"===N){for(z+=N,n();r(N);)z+=N,n();return"false"===z?z=!1:"true"===z?z=!0:isNaN(Number(z))||(z=Number(z)),void(L=E.IDENTIFIER)}if('"'===N){for(n();""!=N&&('"'!=N||'"'===N&&'"'===s());)z+=N,'"'===N&&n(),n();if('"'!=N)throw _('End of string " expected');return n(),void(L=E.IDENTIFIER)}for(L=E.UNKNOWN;""!=N;)z+=N,n();throw new SyntaxError('Syntax error in part "'+x(z,30)+'"')}function p(){var t={};if(o(),c(),"strict"===z&&(t.strict=!0,c()),("graph"===z||"digraph"===z)&&(t.type=z,c()),L===E.IDENTIFIER&&(t.id=z,c()),"{"!=z)throw _("Angle bracket { expected");if(c(),f(t),"}"!=z)throw _("Angle bracket } expected");if(c(),""!==z)throw _("End of file expected");return c(),delete t.node,delete t.edge,delete t.graph,t}function f(t){for(;""!==z&&"}"!=z;)m(t),";"===z&&c()}function m(t){var e=v(t);if(e)return void b(t,e);var i=g(t);if(!i){if(L!=E.IDENTIFIER)throw _("Identifier expected");var o=z;if(c(),"="===z){if(c(),L!=E.IDENTIFIER)throw _("Identifier expected");t[o]=z,c()}else y(t,o)}}function v(t){var e=null;if("subgraph"===z&&(e={},e.type="subgraph",c(),L===E.IDENTIFIER&&(e.id=z,c())),"{"===z){if(c(),e||(e={}),e.parent=t,e.node=t.node,e.edge=t.edge,e.graph=t.graph,f(e),"}"!=z)throw _("Angle bracket } expected");c(),delete e.node,delete e.edge,delete e.graph,delete e.parent,t.subgraphs||(t.subgraphs=[]),t.subgraphs.push(e)}return e}function g(t){return"node"===z?(c(),t.node=w(),"node"):"edge"===z?(c(),t.edge=w(),"edge"):"graph"===z?(c(),t.graph=w(),"graph"):null}function y(t,e){var i={id:e},o=w();o&&(i.attr=o),d(t,i),b(t,e)}function b(t,e){for(;"->"===z||"--"===z;){var i,o=z;c();var n=v(t);if(n)i=n;else{if(L!=E.IDENTIFIER)throw _("Identifier or subgraph expected");i=z,d(t,{id:i}),c()}var s=w(),r=u(t,e,i,o,s);l(t,r),e=i}}function w(){for(var t=null;"["===z;){for(c(),t={};""!==z&&"]"!=z;){if(L!=E.IDENTIFIER)throw _("Attribute name expected");var e=z;if(c(),"="!=z)throw _("Equal sign = expected");if(c(),L!=E.IDENTIFIER)throw _("Attribute value expected");var i=z;h(t,e,i),c(),","==z&&c()}if("]"!=z)throw _("Bracket ] expected");c()}return t}function _(t){return new SyntaxError(t+', got "'+x(z,30)+'" (char '+I+")")}function x(t,e){return t.length<=e?t:t.substr(0,27)+"..."}function k(t,e,i){Array.isArray(t)?t.forEach(function(t){Array.isArray(e)?e.forEach(function(e){i(t,e)}):i(t,e)}):Array.isArray(e)?e.forEach(function(e){i(t,e)}):i(t,e)}function O(t,e,i){for(var o=e.split("."),n=o.pop(),s=t,r=0;r<o.length;r++){var a=o[r];a in s||(s[a]={}),s=s[a]}return s[n]=i,t}function M(t,e){var i={};for(var o in t)if(t.hasOwnProperty(o)){var n=e[o];Array.isArray(n)?n.forEach(function(e){O(i,e,t[o])}):"string"==typeof n?O(i,n,t[o]):O(i,o,t[o])}return i}function D(t){var e=i(t),o={nodes:[],edges:[],options:{}};if(e.nodes&&e.nodes.forEach(function(t){var e={id:t.id,label:String(t.label||t.id)};a(e,M(t.attr,C)),e.image&&(e.shape="image"),o.nodes.push(e)}),e.edges){var n=function(t){var e={from:t.from,to:t.to};return a(e,M(t.attr,T)),e.arrows="->"===t.type?"to":void 0,e};e.edges.forEach(function(t){var e,i;e=t.from instanceof Object?t.from.nodes:{id:t.from},i=t.to instanceof Object?t.to.nodes:{id:t.to},t.from instanceof Object&&t.from.edges&&t.from.edges.forEach(function(t){var e=n(t);o.edges.push(e)}),k(e,i,function(e,i){var s=u(o,e.id,i.id,t.type,t.attr),r=n(s);o.edges.push(r)}),t.to instanceof Object&&t.to.edges&&t.to.edges.forEach(function(t){var e=n(t);o.edges.push(e)})})}return e.attr&&(o.options=e.attr),o}var C={fontsize:"font.size",fontcolor:"font.color",labelfontcolor:"font.color",fontname:"font.face",color:["color.border","color.background"],fillcolor:"color.background",tooltip:"title",labeltooltip:"title"},T=Object.create(C);T.color="color.color";var E={NULL:0,DELIMITER:1,IDENTIFIER:2,UNKNOWN:3},S={"{":!0,"}":!0,"[":!0,"]":!0,";":!0,"=":!0,",":!0,"->":!0,"--":!0},P="",I=0,N="",z="",L=E.NULL,A=/[a-zA-Z_0-9.:#]/;e.parseDOT=i,e.DOTToGraph=D},function(t,e){function i(t,e){var i=[],o=[],n={edges:{inheritColor:!1},nodes:{fixed:!1,parseColor:!1}};void 0!==e&&(void 0!==e.fixed&&(n.nodes.fixed=e.fixed),void 0!==e.parseColor&&(n.nodes.parseColor=e.parseColor),void 0!==e.inheritColor&&(n.edges.inheritColor=e.inheritColor));for(var s=t.edges,r=t.nodes,a=0;a<s.length;a++){var h={},d=s[a];h.id=d.id,h.from=d.source,h.to=d.target,h.attributes=d.attributes,h.label=d.label,h.title=void 0!==d.attributes?d.attributes.title:void 0,"Directed"===d.type&&(h.arrows="to"),d.color&&n.inheritColor===!1&&(h.color=d.color),i.push(h)}for(var a=0;a<r.length;a++){var l={},u=r[a];l.id=u.id,l.attributes=u.attributes,l.title=u.title,l.x=u.x,l.y=u.y,l.label=u.label,l.title=void 0!==u.attributes?u.attributes.title:void 0,n.nodes.parseColor===!0?l.color=u.color:l.color=void 0!==u.color?{background:u.color,border:u.color,highlight:{background:u.color,border:u.color},hover:{background:u.color,border:u.color}}:void 0,l.size=u.size,l.fixed=n.nodes.fixed&&void 0!==u.x&&void 0!==u.y,o.push(l)}return{nodes:o,edges:i}}e.parseGephi=i},function(t,e){function i(t,e){if(!(t instanceof e))throw new TypeError("Cannot call a class as a function")}Object.defineProperty(e,"__esModule",{value:!0});var o=function(){function t(t,e){for(var i=0;i<e.length;i++){var o=e[i];o.enumerable=o.enumerable||!1,o.configurable=!0,"value"in o&&(o.writable=!0),Object.defineProperty(t,o.key,o)}}return function(e,i,o){return i&&t(e.prototype,i),o&&t(e,o),e}}(),n=function(){function t(e){i(this,t),this.images={},this.imageBroken={},this.callback=e}return o(t,[{key:"_addImageToCache",value:function(t,e){0===e.width&&(document.body.appendChild(e),e.width=e.offsetWidth,e.height=e.offsetHeight,document.body.removeChild(e)),this.images[t]=e}},{key:"_tryloadBrokenUrl",value:function(t,e,i){var o=this;void 0!==t&&void 0!==e&&void 0!==i&&(i.onerror=function(){console.error("Could not load brokenImage:",e),o._addImageToCache(t,new Image)},i.src=e)}},{key:"_redrawWithImage",value:function(t){this.callback&&this.callback(t)}},{key:"load",value:function(t,e,i){var o=this,n=this.images[t];if(n)return n;var s=new Image;return s.onload=function(){o._addImageToCache(t,s),o._redrawWithImage(s)},s.onerror=function(){console.error("Could not load image:",t),o._tryloadBrokenUrl(t,e,s)},s.src=t,s}}]),t}();e["default"]=n,t.exports=e["default"]},function(t,e){e.en={edit:"Edit",del:"Delete selected",back:"Back",addNode:"Add Node",addEdge:"Add Edge",editNode:"Edit Node",editEdge:"Edit Edge",addDescription:"Click in an empty space to place a new node.",edgeDescription:"Click on a node and drag the edge to another node to connect them.",editEdgeDescription:"Click on the control points and drag them to a node to connect to it.",createEdgeError:"Cannot link edges to a cluster.",deleteClusterError:"Clusters cannot be deleted.",editClusterError:"Clusters cannot be edited."},e.en_EN=e.en,e.en_US=e.en,e.de={edit:"Editieren",del:"Lösche Auswahl",back:"Zurück",addNode:"Knoten hinzufügen",addEdge:"Kante hinzufügen",editNode:"Knoten editieren",editEdge:"Kante editieren",addDescription:"Klicke auf eine freie Stelle, um einen neuen Knoten zu plazieren.",edgeDescription:"Klicke auf einen Knoten und ziehe die Kante zu einem anderen Knoten, um diese zu verbinden.",editEdgeDescription:"Klicke auf die Verbindungspunkte und ziehe diese auf einen Knoten, um sie zu verbinden.",createEdgeError:"Es ist nicht möglich, Kanten mit Clustern zu verbinden.",deleteClusterError:"Cluster können nicht gelöscht werden.",editClusterError:"Cluster können nicht editiert werden."},e.de_DE=e.de,e.es={edit:"Editar",del:"Eliminar selección",back:"Átras",addNode:"Añadir nodo",addEdge:"Añadir arista",editNode:"Editar nodo",editEdge:"Editar arista",addDescription:"Haga clic en un lugar vacío para colocar un nuevo nodo.",edgeDescription:"Haga clic en un nodo y arrastre la arista hacia otro nodo para conectarlos.",editEdgeDescription:"Haga clic en un punto de control y arrastrelo a un nodo para conectarlo.",createEdgeError:"No se puede conectar una arista a un grupo.",deleteClusterError:"No es posible eliminar grupos.",editClusterError:"No es posible editar grupos."},e.es_ES=e.es,e.nl={edit:"Wijzigen",del:"Selectie verwijderen",back:"Terug",addNode:"Node toevoegen",addEdge:"Link toevoegen",editNode:"Node wijzigen",editEdge:"Link wijzigen",addDescription:"Klik op een leeg gebied om een nieuwe node te maken.",edgeDescription:"Klik op een node en sleep de link naar een andere node om ze te verbinden.",editEdgeDescription:"Klik op de verbindingspunten en sleep ze naar een node om daarmee te verbinden.",createEdgeError:"Kan geen link maken naar een cluster.",deleteClusterError:"Clusters kunnen niet worden verwijderd.",editClusterError:"Clusters kunnen niet worden aangepast."},e.nl_NL=e.nl,e.nl_BE=e.nl}])});
 
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 /**
  * Server.js
  * @author Khaliq Gant
@@ -18730,11 +20782,12 @@ var Server = {
     },
 
     /**
-     * Generic
+     * Post Promise
      * @use utility ajax POST call
+     * @return ajax promise
      */
-    generic : function(data,endpoint,callback) {
-        $.ajax({
+    postPromise : function(data,endpoint,callback) {
+        return  $.ajax({
             type: 'POST',
             url: endpoint,
             data: data,
@@ -18745,20 +20798,16 @@ var Server = {
                 console.log('whoops!');
             },
             dataType: 'json'
-        }).done(function(result){
-            if (typeof callback === 'function') {
-                var val = result !== undefined ? result : true;
-                callback(val);
-            }
         });
     },
 
     /**
-     * Grab
+     * Get Promise
      * @use utility ajax GET request
+     * @return ajax promise
      */
-    grab : function(endpoint, callback) {
-        $.ajax({
+    getPromise : function(endpoint, callback) {
+        return $.ajax({
             type: 'GET',
             url: endpoint,
             success: function(data, textStatus, jqXHR) {
@@ -18767,10 +20816,6 @@ var Server = {
                 console.log('whoops!');
             },
             dataType: 'json'
-        }).done(function(result){
-            if (typeof callback === 'function') {
-                callback(result);
-            }
         });
     },
 
@@ -18874,7 +20919,7 @@ var Server = {
 
 module.exports = Server;
 
-},{"./vars":16,"backbone":1,"jquery":6,"moment":7}],16:[function(require,module,exports){
+},{"./vars":17,"backbone":1,"jquery":6,"moment":7}],17:[function(require,module,exports){
 /**
  * Vars.js
  * @author Khaliq Gant
@@ -18949,9 +20994,9 @@ var Vars = {
 module.exports = Vars;
 
 
-},{"moment":7}],17:[function(require,module,exports){
+},{"moment":7}],18:[function(require,module,exports){
 
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 // http://wiki.commonjs.org/wiki/Unit_Testing/1.0
 //
 // THIS IS NOT TESTED NOR LIKELY TO WORK OUTSIDE V8!
@@ -19312,7 +21357,7 @@ var objectKeys = Object.keys || function (obj) {
   return keys;
 };
 
-},{"util/":28}],19:[function(require,module,exports){
+},{"util/":29}],20:[function(require,module,exports){
 /*!
  * The buffer module from node.js, for the browser.
  *
@@ -20728,7 +22773,7 @@ function decodeUtf8Char (str) {
   }
 }
 
-},{"base64-js":20,"ieee754":21,"is-array":22}],20:[function(require,module,exports){
+},{"base64-js":21,"ieee754":22,"is-array":23}],21:[function(require,module,exports){
 var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
 ;(function (exports) {
@@ -20854,7 +22899,7 @@ var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 	exports.fromByteArray = uint8ToBase64
 }(typeof exports === 'undefined' ? (this.base64js = {}) : exports))
 
-},{}],21:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m,
       eLen = nBytes * 8 - mLen - 1,
@@ -20940,7 +22985,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 
 /**
  * isArray
@@ -20975,7 +23020,7 @@ module.exports = isArray || function (val) {
   return !! val && '[object Array]' == str.call(val);
 };
 
-},{}],23:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -21278,7 +23323,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],24:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -21303,7 +23348,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],25:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 exports.endianness = function () { return 'LE' };
 
 exports.hostname = function () {
@@ -21350,7 +23395,7 @@ exports.tmpdir = exports.tmpDir = function () {
 
 exports.EOL = '\n';
 
-},{}],26:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -21442,14 +23487,14 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],28:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -22039,7 +24084,7 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":27,"_process":26,"inherits":24}],29:[function(require,module,exports){
+},{"./support/isBuffer":28,"_process":27,"inherits":25}],30:[function(require,module,exports){
 /**
  * Finances.js
  * @author Khaliq Gant
@@ -22068,6 +24113,7 @@ var sweetAlert  = require('sweetalert');
 var enquire     = require('enquire.js');
 var bunyan      = require('bunyan');
 var TapListener = require('tap-listener');
+var Q           = require('q');
 var vs          = require('vis');
 
 var Finances = (function(){
@@ -22516,27 +24562,43 @@ var Finances = (function(){
          *      and add information for visualization data
          */
         computeTrends : function() {
-            // running average of "to pay at least" for the last 12 months
-            server.generic(undefined, 'average', function(result){
-                // store this info for the visualizations
-                Finances.app.visualize.all_cards = result.cards;
-                Finances.app.visualize.all_dates = result.dates;
+            Q.allSettled([
+                    server.postPromise(undefined, 'average'),
+                    server.getPromise('data/analysis/stats.json')])
+            .spread(function(averageResponse, statsResponse)
+            {
+                if (averageResponse.state === 'fulfilled' &&
+                    statsResponse.state === 'fulfilled')
+                {
+                    // store this info for the visualizations
+                    Finances.app.visualize.all_cards =
+                        averageResponse.value.cards;
+                    Finances.app.visualize.all_dates =
+                        averageResponse.value.dates;
+                    Finances.app.visualize.stats = statsResponse.value;
+                    // make visualizations with this stored data
+                    methods.createVisualizations();
 
-                var average = result.average;
-                Finances.app.average = app.average = average.toFixed(2);
-                $(vars.toPayAvg).text('$' + average.toFixed(2));
-                var diff = (app.toPay - app.average).toFixed(2);
-                var posOrNeg = diff > 0 ? '+' : '';
-                var diffClass = diff < 0 ? 'plus' : 'negative';
-                $(vars.difference).removeClass('plus negative');
-                $(vars.difference).html('('+posOrNeg + diff+')')
-                    .addClass(diffClass);
+                    // add average to DOM
+                    var average = averageResponse.value.average;
+                    console.log(average);
+                    Finances.app.average = app.average = average.toFixed(2);
+                    $(vars.toPayAvg).text('$' + average.toFixed(2));
+                    var diff = (app.toPay - app.average).toFixed(2);
+                    var posOrNeg = diff > 0 ? '+' : '';
+                    var diffClass = diff < 0 ? 'plus' : 'negative';
+                    $(vars.difference).removeClass('plus negative');
+                    $(vars.difference).html('('+posOrNeg + diff+')')
+                        .addClass(diffClass);
+                }
             });
+        },
 
-            // grab the average of each card
-            server.grab('data/analysis/stats.json', function(result){
-                Finances.app.visualize.stats = result;
-            });
+        createVisualizations: function() {
+            console.log('Data for visualizations');
+            console.log(Finances.app.visualize.all_cards);
+            console.log(Finances.app.visualize.all_dates);
+            console.log(Finances.app.visualize.stats);
         },
 
         updateOverview : function() {
@@ -23110,4 +25172,4 @@ $(document).ready(function() {
 });
 
 
-},{"./server":15,"./vars":16,"backbone":1,"bunyan":3,"enquire.js":5,"jquery":6,"moment":7,"sweetalert":8,"tap-listener":12,"underscore":13,"vis":14}]},{},[29]);
+},{"./server":16,"./vars":17,"backbone":1,"bunyan":3,"enquire.js":5,"jquery":6,"moment":7,"q":8,"sweetalert":9,"tap-listener":13,"underscore":14,"vis":15}]},{},[30]);

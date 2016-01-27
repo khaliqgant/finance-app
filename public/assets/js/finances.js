@@ -26,6 +26,7 @@ var sweetAlert  = require('sweetalert');
 var enquire     = require('enquire.js');
 var bunyan      = require('bunyan');
 var TapListener = require('tap-listener');
+var Q           = require('q');
 var vs          = require('vis');
 
 var Finances = (function(){
@@ -474,27 +475,43 @@ var Finances = (function(){
          *      and add information for visualization data
          */
         computeTrends : function() {
-            // running average of "to pay at least" for the last 12 months
-            server.generic(undefined, 'average', function(result){
-                // store this info for the visualizations
-                Finances.app.visualize.all_cards = result.cards;
-                Finances.app.visualize.all_dates = result.dates;
+            Q.allSettled([
+                    server.postPromise(undefined, 'average'),
+                    server.getPromise('data/analysis/stats.json')])
+            .spread(function(averageResponse, statsResponse)
+            {
+                if (averageResponse.state === 'fulfilled' &&
+                    statsResponse.state === 'fulfilled')
+                {
+                    // store this info for the visualizations
+                    Finances.app.visualize.all_cards =
+                        averageResponse.value.cards;
+                    Finances.app.visualize.all_dates =
+                        averageResponse.value.dates;
+                    Finances.app.visualize.stats = statsResponse.value;
+                    // make visualizations with this stored data
+                    methods.createVisualizations();
 
-                var average = result.average;
-                Finances.app.average = app.average = average.toFixed(2);
-                $(vars.toPayAvg).text('$' + average.toFixed(2));
-                var diff = (app.toPay - app.average).toFixed(2);
-                var posOrNeg = diff > 0 ? '+' : '';
-                var diffClass = diff < 0 ? 'plus' : 'negative';
-                $(vars.difference).removeClass('plus negative');
-                $(vars.difference).html('('+posOrNeg + diff+')')
-                    .addClass(diffClass);
+                    // add average to DOM
+                    var average = averageResponse.value.average;
+                    console.log(average);
+                    Finances.app.average = app.average = average.toFixed(2);
+                    $(vars.toPayAvg).text('$' + average.toFixed(2));
+                    var diff = (app.toPay - app.average).toFixed(2);
+                    var posOrNeg = diff > 0 ? '+' : '';
+                    var diffClass = diff < 0 ? 'plus' : 'negative';
+                    $(vars.difference).removeClass('plus negative');
+                    $(vars.difference).html('('+posOrNeg + diff+')')
+                        .addClass(diffClass);
+                }
             });
+        },
 
-            // grab the average of each card
-            server.grab('data/analysis/stats.json', function(result){
-                Finances.app.visualize.stats = result;
-            });
+        createVisualizations: function() {
+            console.log('Data for visualizations');
+            console.log(Finances.app.visualize.all_cards);
+            console.log(Finances.app.visualize.all_dates);
+            console.log(Finances.app.visualize.stats);
         },
 
         updateOverview : function() {

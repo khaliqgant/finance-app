@@ -25,7 +25,7 @@ var trends = {
                 var data = JSON.parse(fs.readFileSync(file));
                 var cards = data.to_pay.credit_cards;
                 all_cards.push(cards);
-                dates.push(file);
+                dates.push(fileDate);
                 count++;
                 for (var credit in cards) {
                     for (var type in cards[credit]) {

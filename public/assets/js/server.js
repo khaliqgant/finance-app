@@ -142,11 +142,12 @@ var Server = {
     },
 
     /**
-     * Generic
+     * Post Promise
      * @use utility ajax POST call
+     * @return ajax promise
      */
-    generic : function(data,endpoint,callback) {
-        $.ajax({
+    postPromise : function(data,endpoint,callback) {
+        return  $.ajax({
             type: 'POST',
             url: endpoint,
             data: data,
@@ -157,20 +158,16 @@ var Server = {
                 console.log('whoops!');
             },
             dataType: 'json'
-        }).done(function(result){
-            if (typeof callback === 'function') {
-                var val = result !== undefined ? result : true;
-                callback(val);
-            }
         });
     },
 
     /**
-     * Grab
+     * Get Promise
      * @use utility ajax GET request
+     * @return ajax promise
      */
-    grab : function(endpoint, callback) {
-        $.ajax({
+    getPromise : function(endpoint, callback) {
+        return $.ajax({
             type: 'GET',
             url: endpoint,
             success: function(data, textStatus, jqXHR) {
@@ -179,10 +176,6 @@ var Server = {
                 console.log('whoops!');
             },
             dataType: 'json'
-        }).done(function(result){
-            if (typeof callback === 'function') {
-                callback(result);
-            }
         });
     },
 
