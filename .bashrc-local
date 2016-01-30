@@ -1,5 +1,5 @@
 # Alias for dev process, specific to this project
-alias init='tab "watchify public/assets/js/finances.js -o public/assets/js/app.js -v" && tab "nodemon server.js"'
+alias dev='tab "watchify public/assets/js/finances.js -o public/assets/js/app.js -v" && tab "nodemon server.js"'
 alias js:watch='watchify public/assets/js/finances.js -o public/assets/js/app.js -v'
 alias css:compile='(cd public/assets/css && npm-css finances.css -o app.css)'
 alias deploy='(cd deploy && ansible-playbook deploy.yml --ask-pass)'

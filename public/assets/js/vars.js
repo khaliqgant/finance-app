@@ -67,6 +67,9 @@ var Vars = {
     historical : '.js-historical',
     toPayAvg : '.js-toPay-average',
     difference : '.js-diff',
+    visualizations: {
+        listener: '.js-visualize',
+    }
 };
 
 module.exports = Vars;

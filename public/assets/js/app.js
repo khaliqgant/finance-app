@@ -20989,6 +20989,9 @@ var Vars = {
     historical : '.js-historical',
     toPayAvg : '.js-toPay-average',
     difference : '.js-diff',
+    visualizations: {
+        listener: '.js-visualize',
+    }
 };
 
 module.exports = Vars;
@@ -24094,6 +24097,10 @@ function hasOwnProperty(obj, prop) {
  *      Backbone : http://backbonejs.org/
  *      Underscore : http://underscorejs.org/
  *      jQuery : https://jquery.com/
+ *      enquire : https://github.com/WickyNilliams/enquire.js/
+ *      sweetAlert : https://github.com/t4t5/sweetalert
+ *      Q : https://github.com/kriskowal/q
+ *      vis : https://github.com/almende/vis
  */
 
 /* global document */
@@ -24505,7 +24512,8 @@ var Finances = (function(){
                         '<span class="<%= field.keyClass %>"'+
                             '><%= field.key %>'+
                         '</span> : '+
-                        '<span class="js-value numerical"'+
+                        '<span class="js-value numerical js-visualize '+
+                        'card-data"'+
                         'data-value="<%= field.value %>">'+
                             '$<%= field.value %>'+
                             vars.pencilHtml +
@@ -24581,7 +24589,6 @@ var Finances = (function(){
 
                     // add average to DOM
                     var average = averageResponse.value.average;
-                    console.log(average);
                     Finances.app.average = app.average = average.toFixed(2);
                     $(vars.toPayAvg).text('$' + average.toFixed(2));
                     var diff = (app.toPay - app.average).toFixed(2);
@@ -24594,7 +24601,14 @@ var Finances = (function(){
             });
         },
 
-        createVisualizations: function() {
+        /**
+         * Create Visualizations
+         * @use leverage vis to display graph information for cc info
+         */
+        createVisualizations: function(el) {
+            var container = document.getElementById(vars.visualization);
+            var items = [
+            ];
             console.log('Data for visualizations');
             console.log(Finances.app.visualize.all_cards);
             console.log(Finances.app.visualize.all_dates);
@@ -24773,6 +24787,14 @@ var Finances = (function(){
                         }
                     }
                 );
+            });
+
+            /**
+             * Visualizations show listener
+             * @use show the associated card data view on click
+             */
+            $(document).on('click', vars.visualizations.listener, function() {
+                methods.createVisualizations(this);
             });
 
             /**
