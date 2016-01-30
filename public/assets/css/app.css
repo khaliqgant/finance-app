@@ -776,6 +776,10 @@ h3.subheader a{
     padding-top: 50px;
 }
 
+.card-data {
+    cursor: pointer;
+}
+
 .numerical {
     font-weight: bold;
 }
