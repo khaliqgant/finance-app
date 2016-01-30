@@ -1,6 +1,7 @@
 @import "../../../node_modules/foundation-sites/css/foundation.min.css";
 @import "../../../node_modules/font-awesome/css/font-awesome.min.css";
 @import "../../../node_modules/sweetalert/dist/sweetalert.css";
+@import "../../../node_modules/custombox/dist/custombox.min.css";
 
 main {
     padding: 50px;
