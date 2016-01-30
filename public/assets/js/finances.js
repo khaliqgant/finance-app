@@ -17,6 +17,7 @@
 /* global window */
 /* global location */
 /* global swal */
+/* global vis */
 
 'use strict';
 
@@ -31,7 +32,7 @@ var enquire     = require('enquire.js');
 var bunyan      = require('bunyan');
 var TapListener = require('tap-listener');
 var Q           = require('q');
-var vs          = require('vis');
+var vis          = require('vis');
 
 var Finances = (function(){
     var debug = false;
@@ -494,8 +495,6 @@ var Finances = (function(){
                     Finances.app.visualize.all_dates =
                         averageResponse.value.dates;
                     Finances.app.visualize.stats = statsResponse.value;
-                    // make visualizations with this stored data
-                    methods.createVisualizations();
 
                     // add average to DOM
                     var average = averageResponse.value.average;
@@ -516,13 +515,42 @@ var Finances = (function(){
          * @use leverage vis to display graph information for cc info
          */
         createVisualizations: function(el) {
-            var container = document.getElementById(vars.visualization);
-            var items = [
+            var container = document.getElementById(vars.visualizations.show);
+            var card_type = $(el).parents('.circle')
+                                .attr('data-name').toLowerCase();
+            var card = $(el).parents('li').attr('data-key');
+            // use trailing 6 keys
+            var items = methods.createItems(card_type, card);
+            var dataset = new vis.DataSet(items);
+
+            var graph2d = new vis.Graph2d(container, dataset, {});
+        },
+
+        /**
+         * Create Items
+         * @use return items array for visualization purposes
+         */
+        createItems: function(card_type, card) {
+            return [
+                { x: Finances.app.visualize.all_dates[0].replace(/_/, '-'),
+                  y: Finances.app.visualize.all_cards[0][card_type][card]
+                },
+                { x: Finances.app.visualize.all_dates[1].replace(/_/, '-'),
+                  y: Finances.app.visualize.all_cards[1][card_type][card]
+                },
+                { x: Finances.app.visualize.all_dates[2].replace(/_/, '-'),
+                  y: Finances.app.visualize.all_cards[2][card_type][card]
+                },
+                { x: Finances.app.visualize.all_dates[3].replace(/_/, '-'),
+                  y: Finances.app.visualize.all_cards[3][card_type][card]
+                },
+                { x: Finances.app.visualize.all_dates[4].replace(/_/, '-'),
+                  y: Finances.app.visualize.all_cards[4][card_type][card]
+                },
+                { x: Finances.app.visualize.all_dates[5].replace(/_/, '-'),
+                  y: Finances.app.visualize.all_cards[5][card_type][card]
+                },
             ];
-            console.log('Data for visualizations');
-            console.log(Finances.app.visualize.all_cards);
-            console.log(Finances.app.visualize.all_dates);
-            console.log(Finances.app.visualize.stats);
         },
 
         updateOverview : function() {

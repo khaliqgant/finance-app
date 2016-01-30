@@ -69,6 +69,7 @@ var Vars = {
     difference : '.js-diff',
     visualizations: {
         listener: '.js-visualize',
+        show: 'visualization',
     }
 };
 
