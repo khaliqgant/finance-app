@@ -24644,7 +24644,7 @@ var Finances = (function(){
          */
         createItems: function(card_type, card) {
             var items = [];
-            for(var i = 0; i < 6; i++)
+            for(var i = 0; i < Finances.app.visualize.all_dates.length; i++)
             {
                 items.push({
                     x: Finances.app.visualize.all_dates[i].replace(/_/, '-'),

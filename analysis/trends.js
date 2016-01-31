@@ -10,8 +10,8 @@ var trends = {
      * @return {function} callback
      */
     toPay : function(callback) {
-        // trailing 6 months
-        var start = moment().subtract(6, 'months');
+        // trailing 8 months
+        var start = moment().subtract(8, 'months');
         var end = moment();
         var count = 0;
         var total = 0;
