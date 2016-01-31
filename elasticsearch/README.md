@@ -36,3 +36,13 @@ and that will just upload the data files located in the "data" directory
 ## Querying
 * Now that data is sitting in ES, to run analysis [Elasticsearch DSL](http://elasticsearch-dsl.readthedocs.org/en/latest/)
 which is a "high-level library" sitting on top of [Python Elasticsearch Client](https://elasticsearch-py.readthedocs.org/en/master/)
+
+## Process
+* A cron job is set up to run at 7 every 15th of the month:
+```
+0 19 15 * * cd~/Sites/finance-app/elasticsearh && ./worker > ../logs/cron.log 2&1
+```
+* This spins up the elasticsearch server, calls the python script and runs the
+aggregations which get output to a file, then uploaded to the server. All this
+is orchestrated via a C program `worker.c`. After that is complete the elastcsearch
+server is shut down
