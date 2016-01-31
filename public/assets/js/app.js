@@ -24609,7 +24609,7 @@ var Finances = (function(){
         createVisualizations: function(el) {
             Custombox.open({
                 target: '#visualize-overlay',
-                effect: 'fadein',
+                effect: 'push',
                 position: ['center', 'top'],
                 overlayOpacity: 1,
                 open: function() {
@@ -24633,6 +24633,7 @@ var Finances = (function(){
                 close: function() {
                     $('#visualize-overlay').hide();
                     $('#visualization').html('');
+                    $(document.body).scrollTop($('a[name="pay"]').offset().top);
                 },
             });
         },
@@ -24642,62 +24643,22 @@ var Finances = (function(){
          * @use return items array for visualization purposes
          */
         createItems: function(card_type, card) {
-            return [
-                { x: Finances.app.visualize.all_dates[0].replace(/_/, '-'),
-                  y: Finances.app.visualize.all_cards[0][card_type][card],
-                  label: {
-                      content: Finances.app.visualize.all_cards[0]
-                                [card_type][card],
-                      className: 'visualize-text',
-                      yOffset: 20
-                  }
-                },
-                { x: Finances.app.visualize.all_dates[1].replace(/_/, '-'),
-                  y: Finances.app.visualize.all_cards[1][card_type][card],
-                  label: {
-                      content: Finances.app.visualize.all_cards[1]
-                                [card_type][card],
-                      className: 'visualize-text',
-                      yOffset: 20
-                  }
-                },
-                { x: Finances.app.visualize.all_dates[2].replace(/_/, '-'),
-                  y: Finances.app.visualize.all_cards[2][card_type][card],
-                  label: {
-                      content: Finances.app.visualize.all_cards[2]
-                                [card_type][card],
-                      className: 'visualize-text',
-                      yOffset: 20
-                  }
-                },
-                { x: Finances.app.visualize.all_dates[3].replace(/_/, '-'),
-                  y: Finances.app.visualize.all_cards[3][card_type][card],
-                  label: {
-                      content: Finances.app.visualize.all_cards[2]
-                                [card_type][card],
-                      className: 'visualize-text',
-                      yOffset: 20
-                  }
-                },
-                { x: Finances.app.visualize.all_dates[4].replace(/_/, '-'),
-                  y: Finances.app.visualize.all_cards[4][card_type][card],
-                  label: {
-                      content: Finances.app.visualize.all_cards[4]
-                                [card_type][card],
-                      className: 'visualize-text',
-                      yOffset: 20
-                  }
-                },
-                { x: Finances.app.visualize.all_dates[5].replace(/_/, '-'),
-                  y: Finances.app.visualize.all_cards[5][card_type][card],
-                  label: {
-                      content: Finances.app.visualize.all_cards[5]
-                                [card_type][card],
-                      className: 'visualize-text',
-                      yOffset: 20
-                  }
-                },
-            ];
+            var items = [];
+            for(var i = 0; i < 6; i++)
+            {
+                items.push({
+                    x: Finances.app.visualize.all_dates[i].replace(/_/, '-'),
+                    y: Finances.app.visualize.all_cards[i][card_type][card],
+                    label: {
+                        content: Finances.app.visualize.all_cards[i]
+                        [card_type][card],
+                        className: 'visualize-text',
+                        xOffset: -40,
+                        yOffset: -20
+                    }
+                });
+            }
+            return items;
         },
 
         updateOverview : function() {
