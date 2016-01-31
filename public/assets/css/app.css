@@ -790,6 +790,14 @@ h3.subheader a{
     cursor: pointer;
 }
 
+.visualize-text {
+    fill: lightblue;
+}
+
+#visualize-overlay {
+    display: none;
+}
+
 .numerical {
     font-weight: bold;
 }
