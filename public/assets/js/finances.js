@@ -17,7 +17,7 @@
 /* global window */
 /* global location */
 /* global swal */
-/* global vis */
+/* global Custombox */
 
 'use strict';
 
@@ -32,7 +32,7 @@ var enquire     = require('enquire.js');
 var bunyan      = require('bunyan');
 var TapListener = require('tap-listener');
 var Q           = require('q');
-var vis          = require('vis');
+var vis         = require('vis');
 
 var Finances = (function(){
     var debug = false;
@@ -513,17 +513,37 @@ var Finances = (function(){
         /**
          * Create Visualizations
          * @use leverage vis to display graph information for cc info
+         * 2d: http://visjs.org/docs/graph2d/
          */
         createVisualizations: function(el) {
-            var container = document.getElementById(vars.visualizations.show);
-            var card_type = $(el).parents('.circle')
-                                .attr('data-name').toLowerCase();
-            var card = $(el).parents('li').attr('data-key');
-            // use trailing 6 keys
-            var items = methods.createItems(card_type, card);
-            var dataset = new vis.DataSet(items);
+            Custombox.open({
+                target: '#visualize-overlay',
+                effect: 'fadein',
+                position: ['center', 'top'],
+                overlayOpacity: 1,
+                open: function() {
+                    var container = document.getElementById(
+                        vars.visualizations.show
+                    );
+                    var card_type = $(el).parents('.circle')
+                    .attr('data-name').toLowerCase();
+                    var card = $(el).parents('li').attr('data-key');
+                    // use trailing 6 keys
+                    var items = methods.createItems(card_type, card);
+                    var dataset = new vis.DataSet(items);
 
-            var graph2d = new vis.Graph2d(container, dataset, {});
+                    var options = {
+                        orientation: 'top',
+                        autoResize: true
+                    };
+
+                    var graph2d = new vis.Graph2d(container, dataset, options);
+                },
+                close: function() {
+                    $('#visualize-overlay').hide();
+                    $('#visualization').html('');
+                },
+            });
         },
 
         /**
@@ -533,22 +553,58 @@ var Finances = (function(){
         createItems: function(card_type, card) {
             return [
                 { x: Finances.app.visualize.all_dates[0].replace(/_/, '-'),
-                  y: Finances.app.visualize.all_cards[0][card_type][card]
+                  y: Finances.app.visualize.all_cards[0][card_type][card],
+                  label: {
+                      content: Finances.app.visualize.all_cards[0]
+                                [card_type][card],
+                      className: 'visualize-text',
+                      yOffset: 20
+                  }
                 },
                 { x: Finances.app.visualize.all_dates[1].replace(/_/, '-'),
-                  y: Finances.app.visualize.all_cards[1][card_type][card]
+                  y: Finances.app.visualize.all_cards[1][card_type][card],
+                  label: {
+                      content: Finances.app.visualize.all_cards[1]
+                                [card_type][card],
+                      className: 'visualize-text',
+                      yOffset: 20
+                  }
                 },
                 { x: Finances.app.visualize.all_dates[2].replace(/_/, '-'),
-                  y: Finances.app.visualize.all_cards[2][card_type][card]
+                  y: Finances.app.visualize.all_cards[2][card_type][card],
+                  label: {
+                      content: Finances.app.visualize.all_cards[2]
+                                [card_type][card],
+                      className: 'visualize-text',
+                      yOffset: 20
+                  }
                 },
                 { x: Finances.app.visualize.all_dates[3].replace(/_/, '-'),
-                  y: Finances.app.visualize.all_cards[3][card_type][card]
+                  y: Finances.app.visualize.all_cards[3][card_type][card],
+                  label: {
+                      content: Finances.app.visualize.all_cards[2]
+                                [card_type][card],
+                      className: 'visualize-text',
+                      yOffset: 20
+                  }
                 },
                 { x: Finances.app.visualize.all_dates[4].replace(/_/, '-'),
-                  y: Finances.app.visualize.all_cards[4][card_type][card]
+                  y: Finances.app.visualize.all_cards[4][card_type][card],
+                  label: {
+                      content: Finances.app.visualize.all_cards[4]
+                                [card_type][card],
+                      className: 'visualize-text',
+                      yOffset: 20
+                  }
                 },
                 { x: Finances.app.visualize.all_dates[5].replace(/_/, '-'),
-                  y: Finances.app.visualize.all_cards[5][card_type][card]
+                  y: Finances.app.visualize.all_cards[5][card_type][card],
+                  label: {
+                      content: Finances.app.visualize.all_cards[5]
+                                [card_type][card],
+                      className: 'visualize-text',
+                      yOffset: 20
+                  }
                 },
             ];
         },
@@ -731,8 +787,9 @@ var Finances = (function(){
              * Visualizations show listener
              * @use show the associated card data view on click
              */
-            $(document).on('click', vars.visualizations.listener, function() {
+            $(document).on('click', vars.visualizations.listener, function(e) {
                 methods.createVisualizations(this);
+                e.preventDefault();
             });
 
             /**
