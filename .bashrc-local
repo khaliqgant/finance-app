@@ -2,7 +2,7 @@
 alias dev='tab "watchify public/assets/js/finances.js -o public/assets/js/app.js -v" && tab "nodemon server.js"'
 alias js:watch='watchify public/assets/js/finances.js -o public/assets/js/app.js -v'
 alias css:compile='(cd public/assets/css && npm-css finances.css -o app.css)'
-alias deploy='(cd deploy && ansible-playbook deploy.yml --ask-pass)'
+alias deploy='(cd deploy && ansible-playbook deploy.yml)'
 alias server:run='nodemon server.js'
 alias upload:data='sshpass -f auth/.pass rsync -r data khaliqgant:/home/kjg/finances -v'
 alias ggpull='ggpull && sync:data'
