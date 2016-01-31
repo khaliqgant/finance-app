@@ -18,7 +18,10 @@ var users = require('./routes/users');
 
 var app = express();
 var trends = require('./analysis/trends');
-app.use(auth.connect(basic));
+
+if (app.get('env') === 'prod') {
+    app.use(auth.connect(basic));
+}
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
