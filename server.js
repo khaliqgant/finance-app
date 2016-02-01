@@ -12,6 +12,11 @@ var routes = require('./routes/index');
 var users = require('./routes/users');
 
 var app = express();
+var trends = require('./analysis/trends');
+
+if (app.get('env') === 'prod') {
+    app.use(auth.connect(basic));
+}
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -200,6 +205,13 @@ app.post('/new', function(req,res){
     fs.writeFileSync(files.notes.next.file, notesDateContent);
 
     res.json(true);
+});
+
+
+app.post('/average', function(req,res){
+    trends.toPay(function(response){
+        res.json(response);
+    });
 });
 
 // catch 404 and forward to error handler

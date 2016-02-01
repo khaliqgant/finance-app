@@ -7,25 +7,32 @@
  *      Backbone : http://backbonejs.org/
  *      Underscore : http://underscorejs.org/
  *      jQuery : https://jquery.com/
+ *      enquire : https://github.com/WickyNilliams/enquire.js/
+ *      sweetAlert : https://github.com/t4t5/sweetalert
+ *      Q : https://github.com/kriskowal/q
+ *      vis : https://github.com/almende/vis
  */
 
 /* global document */
 /* global window */
 /* global location */
 /* global swal */
+/* global Custombox */
 
 'use strict';
 
-var $          = require('jquery');
-var _          = require('underscore');
-var Backbone   = require('backbone');
-var server     = require('./server');
-var vars       = require('./vars');
-var draggable  = require('./draggable');
-var moment     = require('moment');
-var sweetAlert = require('sweetalert');
-var enquire    = require('enquire.js');
-var bunyan     = require('bunyan');
+var $           = require('jquery');
+var _           = require('underscore');
+var Backbone    = require('backbone');
+var server      = require('./server');
+var vars        = require('./vars');
+var moment      = require('moment');
+var sweetAlert  = require('sweetalert');
+var enquire     = require('enquire.js');
+var bunyan      = require('bunyan');
+var TapListener = require('tap-listener');
+var Q           = require('q');
+var vis         = require('vis');
 
 var Finances = (function(){
     var debug = false;
@@ -41,7 +48,8 @@ var Finances = (function(){
         debt : 0,
         toPay : 0,
         ring : 0,
-        sections : ['debt','cash', 'to_pay', 'notes']
+        sections : ['debt','cash', 'to_pay', 'notes', 'links'],
+        visualize: {}
     };
 
     /**
@@ -83,6 +91,7 @@ var Finances = (function(){
                     methods.calculations.init();
                     methods.updateOverview();
                     methods.addNotePluses();
+                    methods.computeTrends();
                 }
             });
 
@@ -246,8 +255,11 @@ var Finances = (function(){
 
             if (item.value.hasOwnProperty('next_month')) {
                 var month = item.value.next_month ?
-                    moment(app.date,'MM_YYYY').month() + 2 :
-                    moment(app.date,'MM_YYYY').format('M');
+                    moment(app.date, 'YYYY_MM').month() + 2 :
+                    moment(app.date, 'YYYY_MM').format('M');
+                if (month > 12) {
+                    month = 1;
+                }
                 var date = month + '/' + item.value.date;
                 var dueOrClosing = !item.value.hasOwnProperty('paid') ?
                     'Closing Date' : '<strong>Due Date</strong>';
@@ -286,7 +298,7 @@ var Finances = (function(){
                 var content = $(vars[val]).find(item.keyClass).html();
                 $(vars[val]).find(item.keyClass).replaceWith(
                     '<a target="_blank" href="'+item.value.link+'">' +
-                        content +
+                        titleCase(content.strip()) +
                     '</a>'
                 );
             }
@@ -399,7 +411,8 @@ var Finances = (function(){
                         '<span class="<%= field.keyClass %>"'+
                             '><%= field.key %>'+
                         '</span> : '+
-                        '<span class="js-value numerical"'+
+                        '<span class="js-value numerical js-visualize '+
+                        'card-data"'+
                         'data-value="<%= field.value %>">'+
                             '$<%= field.value %>'+
                             vars.pencilHtml +
@@ -448,6 +461,126 @@ var Finances = (function(){
             $(vars.notes + ' .circle').each(function(){
                 $(this).append(vars.plusHtml);
             });
+        },
+
+        /**
+         * Compute Trends
+         * @use calculate trends and append to the trend box
+         *      and add information for visualization data
+         */
+        computeTrends : function() {
+            Q.allSettled([
+                    server.postPromise(undefined, 'average'),
+                    server.getPromise('data/analysis/stats.json')])
+            .spread(function(averageResponse, statsResponse)
+            {
+                if (averageResponse.state === 'fulfilled' &&
+                    statsResponse.state === 'fulfilled')
+                {
+                    // store this info for the visualizations
+                    Finances.app.visualize.all_cards =
+                        averageResponse.value.cards;
+                    Finances.app.visualize.all_dates =
+                        averageResponse.value.dates;
+                    Finances.app.visualize.stats = statsResponse.value;
+
+                    // add average to DOM
+                    var average = averageResponse.value.average;
+                    Finances.app.average = app.average = average.toFixed(2);
+                    $(vars.toPayAvg).text('$' + average.toFixed(2));
+                    var diff = (app.toPay - app.average).toFixed(2);
+                    var posOrNeg = diff > 0 ? '+' : '';
+                    var diffClass = diff < 0 ? 'plus' : 'negative';
+                    $(vars.difference).removeClass('plus negative');
+                    $(vars.difference).html('('+posOrNeg + diff+')')
+                        .addClass(diffClass);
+                }
+            });
+        },
+
+        /**
+         * Create Visualizations
+         * @use leverage vis to display graph information for cc info
+         * @dependencies
+         *      2d: http://visjs.org/docs/graph2d/
+         *      custombox: http://dixso.github.io/custombox/
+         */
+        createVisualizations: function(el) {
+            Custombox.open({
+                target: '#visualize-overlay',
+                effect: 'push',
+                position: ['center', 'top'],
+                overlayOpacity: 1,
+                open: function() {
+                    var container = document.getElementById(
+                        vars.visualizations.show
+                    );
+                    var card_type = $(el).parents('.circle')
+                    .attr('data-name').toLowerCase();
+                    var card = $(el).parents('li').attr('data-key');
+                    var items = methods.createItems(card_type, card);
+                    var dataset = new vis.DataSet(items);
+
+                    var options = {
+                        orientation: 'top',
+                        autoResize: true
+                    };
+
+                    var graph2d = new vis.Graph2d(container, dataset, options);
+
+                    // add in stats and card header
+                    var cardType = card_type.ucfirst() + ' - ' + card.ucfirst()
+                                    .replace(/_/, ' ');
+                    $(vars.visualizations.card).text(cardType);
+
+                    // add in stats data
+                    var stats = Finances.app.visualize.stats;
+
+                    if (stats[card_type].hasOwnProperty(card)) {
+                        $(vars.visualizations.average).text(
+                            stats[card_type][card].avg
+                        );
+                        $(vars.visualizations.min).text(
+                            stats[card_type][card].min
+                        );
+                        $(vars.visualizations.max).text(
+                            stats[card_type][card].max
+                        );
+                    }
+                },
+                close: function() {
+                    $('#visualize-overlay').hide();
+                    $('#visualization').html('');
+                    $(document.body).scrollTop($('a[name="pay"]').offset().top);
+                },
+            });
+        },
+
+        /**
+         * Create Items
+         * @use return items array for visualization purposes
+         */
+        createItems: function(card_type, card) {
+            var items = [];
+            var all_cards = Finances.app.visualize.all_cards;
+            for(var i = 0; i < Finances.app.visualize.all_dates.length; i++)
+            {
+                if (all_cards[i][card_type].hasOwnProperty(card)) {
+                    items.push({
+                        x: Finances.app.visualize.all_dates[i]
+                            .replace(/_/, '-'),
+                        y: Finances.app.visualize.all_cards[i][card_type][card],
+                        label: {
+                            content: Finances.app.visualize.all_cards[i]
+                                        [card_type][card],
+                            className: 'visualize-text',
+                            xOffset: -40,
+                            yOffset: -15
+                        }
+                    });
+                }
+            }
+            return items;
         },
 
         updateOverview : function() {
@@ -501,7 +634,13 @@ var Finances = (function(){
             income : function() {
                 // get total
                 var gross = $('.income .gross .numerical').attr('data-value');
-                var total = parseFloat(gross) +  parseFloat(gross);
+                var misc = $(vars.income.misc).parent('ul').find('.numerical')
+                    .attr('data-value') ?
+                        $(vars.income.misc).parent('ul').find('.numerical')
+                    .attr('data-value') :
+                        0;
+                var total = parseFloat(gross) +  parseFloat(gross) +
+                            parseFloat(misc);
                 // only append once
                 if ($('.income .gross .total').length === 0) {
                     $('.income .gross').append(
@@ -619,6 +758,15 @@ var Finances = (function(){
             });
 
             /**
+             * Visualizations show listener
+             * @use show the associated card data view on click
+             */
+            $(document).on('click', vars.visualizations.listener, function(e) {
+                methods.createVisualizations(this);
+                e.preventDefault();
+            });
+
+            /**
              * Pencil click listener
              * @use change value to a input box when a pencil is clicked
              */
@@ -696,7 +844,7 @@ var Finances = (function(){
                         .add(vars.monthCount,'months').format('MMMM');
                 methods.updateMonth(month);
                 app.date = moment()
-                        .add(vars.monthCount,'months').format('MM_YYYY');
+                        .add(vars.monthCount,'months').format('YYYY_MM');
 
                 // make a new file
                 if ($(this).hasClass('inactive')){
@@ -735,7 +883,7 @@ var Finances = (function(){
                         .add(vars.monthCount,'months').format('MMMM');
                 methods.updateMonth(month);
                 app.date = moment()
-                        .add(vars.monthCount,'months').format('MM_YYYY');
+                        .add(vars.monthCount,'months').format('YYYY_MM');
                 // re-initialize the app
                 methods.reset(function(done){
                     methods.init();
@@ -746,7 +894,7 @@ var Finances = (function(){
                 e.preventDefault();
                 vars.monthCount = 0;
                 methods.updateMonth();
-                app.date = moment().format('MM_YYYY');
+                app.date = moment().format('YYYY_MM');
                 methods.reset(function(done){
                     methods.init();
                 });
@@ -811,6 +959,24 @@ var Finances = (function(){
                 $(this).before(noteInputHtml);
                 $(this).parents('.circle').find(vars.noteInput).focus();
             });
+
+            /**
+             * Hide overview and trend box if clicked/tap
+             */
+            var financeEl = document.getElementsByClassName(
+                Finances.vars.overviewBoxClass)[0];
+            var tapperF = new TapListener(financeEl);
+            tapperF.on('tap',function(e){
+                listeners.methods.overviewHide(financeEl);
+            });
+
+            var trendEl = document.getElementsByClassName(
+                Finances.vars.trendBoxClass)[0];
+            var tapperE = new TapListener(trendEl);
+            tapperE.on('tap',function(e){
+                listeners.methods.overviewHide(trendEl);
+            });
+
 
             // immediately invoked
             methods.updateMonth();
@@ -954,6 +1120,11 @@ var Finances = (function(){
     String.prototype.strip = function(){
         return this.replace('_',' ');
     };
+
+    // http://stackoverflow.com/questions/4878756/javascript-how-to-capitalize-first-letter-of-each-word-like-a-2-word-city
+    function titleCase(str) {
+        return str.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
+    }
 
     var API = {
         app : app,

@@ -4,7 +4,6 @@ Khaliq's Personal Finance App
 A simple app to manage finances. This is the public branch which runs the example
 app at finance.khaliqgant.com.
 
-
 # About
 * I love mint and also mint bills, but wanted more control and ability to forecast
 my current and future expenses. So I built this. I've been using this pretty consistently
@@ -37,6 +36,9 @@ process via a CLI so if you are interested in that, let me know!
 months data into new files so you can forecast payments as well.
 * Any questions or issues feel free to make a Github issue!
 
+# Elasticsearch
+* Aggregations are run on the data once a month
+* Explained more [here](https://github.com/khaliqgant/finance-app/tree/master/elasticsearch)
 
 
 # Development
@@ -47,6 +49,11 @@ months data into new files so you can forecast payments as well.
 nodemon server.js
 ```
 * App can be accessed from http://localhost:3000/
+* In production I use [forever](https://github.com/foreverjs/forever) to launch the app and run in the background
+```
+NODE_ENV=prod forever start --uid finances --append -c nodemon server.js
+```
+
 * There is a basic auth in [place](https://github.com/khaliqgant/finance-app/blob/master/server.js#L11)
 so you'll need to create an auth directory and a .htpasswd file with some creds.
 You can generate such a file [here](http://www.htaccesstools.com/htpasswd-generator/)

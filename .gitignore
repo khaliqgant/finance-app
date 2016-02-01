@@ -1,4 +1,18 @@
 .DS_Store
 /node_modules/
 nohup.out
-auth/.pass
+auth/*
+/elasticsearch/venv/
+*.pyc
+/elasticsearch/schema.json
+/logs
+
+#c ignore https://github.com/github/gitignore/blob/master/C.gitignore
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Rope
+.ropeproject

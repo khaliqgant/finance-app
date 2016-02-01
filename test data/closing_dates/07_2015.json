@@ -1,0 +1,53 @@
+{
+    "closing_dates": {
+        "amex": {
+            "cash": {
+                "date": 28,
+                "next_month": false
+            },
+            "sky": {
+                "date": 11,
+                "next_month": true
+            },
+            "points": {
+                "date": 28,
+                "next_month": false
+            }
+        },
+        "visa": {
+            "slate": {
+                "date": 11,
+                "next_month": true
+            },
+            "freedom": {
+                "date": 9,
+                "next_month": true
+            },
+            "bofa": {
+                "date": 4,
+                "next_month": true
+            }
+        },
+        "mc": {
+            "citi": {
+                "date": 10,
+                "next_month": true
+            },
+            "sallie": {
+                "date": 4,
+                "next_month": true
+            }
+        },
+        "discover": {
+            "more": {
+                "date": 3,
+                "next_month": true
+            },
+            "chrome": {
+                "date": 13,
+                "next_month": true
+            }
+        }
+    }
+}
+

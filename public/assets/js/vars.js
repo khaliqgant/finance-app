@@ -11,7 +11,7 @@
 var moment = require('moment');
 
 var Vars = {
-    date : moment().format('MM_YYYY'),
+    date : moment().format('YYYY_MM'),
     cash : '.js-cash',
     debt : '.js-debt',
     to_pay : '.js-to_pay',
@@ -59,6 +59,21 @@ var Vars = {
         listener :'.js-dropdown-activate',
         el :'.js-dropdown',
     },
+    refresh : '.js-refresh',
+    overviewBoxClass :'js-overview',
+    trendBoxClass :'js-trends',
+    overviewBox :'.js-overview',
+    historical : '.js-historical',
+    toPayAvg : '.js-toPay-average',
+    difference : '.js-diff',
+    visualizations: {
+        listener: '.js-visualize',
+        show: 'visualization',
+        card: '.js-card',
+        average: '.js-average',
+        min: '.js-min',
+        max: '.js-max',
+    }
 };
 
 module.exports = Vars;
