@@ -35,6 +35,9 @@ process via a CLI so if you are interested in that, let me know!
 months data into new files so you can forecast payments as well.
 * Any questions or issues feel free to make a Github issue!
 
+# Elasticsearch
+* Aggregations are run on the data once a month
+* Explained more [here](https://github.com/khaliqgant/finance-app/tree/master/elasticsearch)
 
 
 # Development
@@ -47,7 +50,7 @@ nodemon server.js
 * App can be accessed from http://localhost:3000/
 * In production I use [forever](https://github.com/foreverjs/forever) to launch the app and run in the background
 ```
-forever start -c nodemon server.js
+NODE_ENV=prod forever start --uid finances --append -c nodemon server.js
 ```
 
 * There is a basic auth in [place](https://github.com/khaliqgant/finance-app/blob/master/server.js#L11)
