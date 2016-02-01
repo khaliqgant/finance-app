@@ -15,3 +15,7 @@ backup:data() {
 
 alias sync:data='sshpass -f auth/.pass rsync -r khaliqgant:/home/kjg/finances/data . -v && backup:data'
 
+sync:test-data() {
+    sshpass -f auth/.pass rsync -r khaliqgant:/home/kjg/finances-example/data . -v
+}
+
