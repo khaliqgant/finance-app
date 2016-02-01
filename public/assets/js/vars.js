@@ -70,6 +70,10 @@ var Vars = {
     visualizations: {
         listener: '.js-visualize',
         show: 'visualization',
+        card: '.js-card',
+        average: '.js-average',
+        min: '.js-min',
+        max: '.js-max',
     }
 };
 

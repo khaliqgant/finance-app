@@ -513,7 +513,9 @@ var Finances = (function(){
         /**
          * Create Visualizations
          * @use leverage vis to display graph information for cc info
-         * 2d: http://visjs.org/docs/graph2d/
+         * @dependencies
+         *      2d: http://visjs.org/docs/graph2d/
+         *      custombox: http://dixso.github.io/custombox/
          */
         createVisualizations: function(el) {
             Custombox.open({
@@ -528,7 +530,6 @@ var Finances = (function(){
                     var card_type = $(el).parents('.circle')
                     .attr('data-name').toLowerCase();
                     var card = $(el).parents('li').attr('data-key');
-                    // use trailing 6 keys
                     var items = methods.createItems(card_type, card);
                     var dataset = new vis.DataSet(items);
 
@@ -538,6 +539,26 @@ var Finances = (function(){
                     };
 
                     var graph2d = new vis.Graph2d(container, dataset, options);
+
+                    // add in stats and card header
+                    var cardType = card_type.ucfirst() + ' - ' + card.ucfirst()
+                                    .replace(/_/, ' ');
+                    $(vars.visualizations.card).text(cardType);
+
+                    // add in stats data
+                    var stats = Finances.app.visualize.stats;
+
+                    if (stats[card_type].hasOwnProperty(card)) {
+                        $(vars.visualizations.average).text(
+                            stats[card_type][card].avg
+                        );
+                        $(vars.visualizations.min).text(
+                            stats[card_type][card].min
+                        );
+                        $(vars.visualizations.max).text(
+                            stats[card_type][card].max
+                        );
+                    }
                 },
                 close: function() {
                     $('#visualize-overlay').hide();
@@ -553,19 +574,23 @@ var Finances = (function(){
          */
         createItems: function(card_type, card) {
             var items = [];
+            var all_cards = Finances.app.visualize.all_cards;
             for(var i = 0; i < Finances.app.visualize.all_dates.length; i++)
             {
-                items.push({
-                    x: Finances.app.visualize.all_dates[i].replace(/_/, '-'),
-                    y: Finances.app.visualize.all_cards[i][card_type][card],
-                    label: {
-                        content: Finances.app.visualize.all_cards[i]
-                        [card_type][card],
-                        className: 'visualize-text',
-                        xOffset: -40,
-                        yOffset: -20
-                    }
-                });
+                if (all_cards[i][card_type].hasOwnProperty(card)) {
+                    items.push({
+                        x: Finances.app.visualize.all_dates[i]
+                            .replace(/_/, '-'),
+                        y: Finances.app.visualize.all_cards[i][card_type][card],
+                        label: {
+                            content: Finances.app.visualize.all_cards[i]
+                                        [card_type][card],
+                            className: 'visualize-text',
+                            xOffset: -40,
+                            yOffset: -15
+                        }
+                    });
+                }
             }
             return items;
         },

@@ -86,6 +86,22 @@ h3.subheader a{
     display: none;
 }
 
+#visualize-overlay .card {
+    color: white;
+    font-size: 24px;
+}
+
+#visualize-overlay .stats {
+    color: lightblue;
+}
+
+#visualize-overlay .stats ul{
+    list-style: none;
+}
+
+#visualize-overlay .stats h2{
+}
+
 .numerical {
     font-weight: bold;
 }
