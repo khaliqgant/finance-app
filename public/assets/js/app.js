@@ -20976,6 +20976,7 @@ var Vars = {
     payInput : '.js-pay-input',
     noteInput : '.js-note-input',
     pencilHtml : ' <i class="fa fa-pencil-square-o js-pencil"></i>',
+    eyeHtml: '<i class="fa fa-line-chart fa-1 js-visualize card-data"></i>',
     plusHtml : '<i class="fa fa-plus-circle js-add-note"></i>',
     addNote : '.js-add-note',
     dropdown : {
@@ -24518,11 +24519,11 @@ var Finances = (function(){
                         '<span class="<%= field.keyClass %>"'+
                             '><%= field.key %>'+
                         '</span> : '+
-                        '<span class="js-value numerical js-visualize '+
-                        'card-data"'+
+                        '<span class="js-value numerical"'+
                         'data-value="<%= field.value %>">'+
                             '$<%= field.value %>'+
                             vars.pencilHtml +
+                            vars.eyeHtml +
                         '</span>' +
                     '</li>'+
                 '<% }); %>'

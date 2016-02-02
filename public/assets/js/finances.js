@@ -423,11 +423,11 @@ var Finances = (function(){
                         '<span class="<%= field.keyClass %>"'+
                             '><%= field.key %>'+
                         '</span> : '+
-                        '<span class="js-value numerical js-visualize '+
-                        'card-data"'+
+                        '<span class="js-value numerical"'+
                         'data-value="<%= field.value %>">'+
                             '$<%= field.value %>'+
                             vars.pencilHtml +
+                            vars.eyeHtml +
                         '</span>' +
                     '</li>'+
                 '<% }); %>'
