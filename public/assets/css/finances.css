@@ -80,6 +80,10 @@ h3.subheader a{
     padding-left: 7px;
 }
 
+.payments .card-data {
+    display: none;
+}
+
 .visualize-text {
     fill: lightblue;
 }
