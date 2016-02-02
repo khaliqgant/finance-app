@@ -1,1 +1,65 @@
-{"debt":{"remote":false,"due_dates":{"remote":true,"file":"due_dates/2016_01.json"},"credit_cards":{"amex":{"cash":"90","sky":"100","points":"100"},"visa":{"slate":"9999","freedom":"1","bofa":"50000"},"mc":{"citi":"0","sallie":"9"},"discover":{"more":"200","chrome":"200"}}},"cash":{"remote":true,"file":"cash/2016_01.json"},"to_pay":{"remote":false,"credit_cards":{"amex":{"cash":"425","sky":"10","points":"500"},"visa":{"slate":"10","freedom":"10","bofa":"10"},"mc":{"citi":"0","sallie":"10"},"discover":{"more":"0","chrome":"10"}},"links":{"remote":true,"file":"links/2015_04.json"}},"notes":{"remote":true,"file":"notes/2016_01.json"}}
+{
+    "debt": {
+        "remote": false,
+        "due_dates": {
+            "remote": true,
+            "file": "due_dates/2016_01.json"
+        },
+        "credit_cards": {
+            "amex": {
+                "cash": "90",
+                "sky": "100",
+                "points": "100"
+            },
+            "visa": {
+                "slate": "9999",
+                "freedom": "1",
+                "bofa": "50000"
+            },
+            "mc": {
+                "citi": "0",
+                "sallie": "9"
+            },
+            "discover": {
+                "more": "200",
+                "chrome": "200"
+            }
+        }
+    },
+    "cash": {
+        "remote": true,
+        "file": "cash/2016_01.json"
+    },
+    "to_pay": {
+        "remote": false,
+        "credit_cards": {
+            "amex": {
+                "cash": "425",
+                "sky": "10",
+                "points": "500"
+            },
+            "visa": {
+                "slate": "10",
+                "freedom": "10",
+                "bofa": "10"
+            },
+            "mc": {
+                "citi": "0",
+                "sallie": "10"
+            },
+            "discover": {
+                "more": "0",
+                "chrome": "10"
+            }
+        }
+    },
+
+    "links": {
+        "remote": true,
+        "file": "links/2015_04.json"
+    },
+    "notes": {
+        "remote": true,
+        "file": "notes/2016_01.json"
+    }
+}
