@@ -782,6 +782,12 @@ h3.subheader a{
 
 .card-data {
     cursor: pointer;
+    color: green;
+    padding-left: 7px;
+}
+
+.payments .card-data {
+    display: none;
 }
 
 .visualize-text {
@@ -803,9 +809,6 @@ h3.subheader a{
 
 #visualize-overlay .stats ul{
     list-style: none;
-}
-
-#visualize-overlay .stats h2{
 }
 
 .numerical {

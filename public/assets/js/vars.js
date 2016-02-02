@@ -53,6 +53,7 @@ var Vars = {
     payInput : '.js-pay-input',
     noteInput : '.js-note-input',
     pencilHtml : ' <i class="fa fa-pencil-square-o js-pencil"></i>',
+    eyeHtml: '<i class="fa fa-line-chart fa-1 js-visualize card-data"></i>',
     plusHtml : '<i class="fa fa-plus-circle js-add-note"></i>',
     addNote : '.js-add-note',
     dropdown : {
