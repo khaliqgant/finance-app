@@ -14,10 +14,10 @@ var basic = auth.basic({
 });
 
 var routes = require('./routes/index');
-var users = require('./routes/users');
 
 var app = express();
 var trends = require('./analysis/trends');
+var api = require('./api');
 
 if (app.get('env') === 'prod') {
     app.use(auth.connect(basic));
@@ -36,7 +36,14 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', routes);
-app.use('/users', users);
+
+/**
+ * API
+ * @use
+ */
+app.get('/api', function(req, res){
+    res.json(api.get());
+});
 
 /**
  * Post
@@ -250,10 +257,6 @@ app.use(function(err, req, res, next) {
   });
 });
 
-
-app.get('/', function (req, res) {
-  res.send('Hello World!');
-});
 
 var server = app.listen(3000, function () {
 
