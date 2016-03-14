@@ -63,6 +63,7 @@ You can generate such a file [here](http://www.htaccesstools.com/htpasswd-genera
 * Hook in mint api or scrape to get this info automatically?
 * http://browserify.org/
 * Pull in accout data programmatically? https://developer.intuit.com/docs/0020_customeraccountdata/0005_service_features
+    * https://github.com/figo-connect/node-figo
 * Use graphs to show changes over time
 * Need task runner commands to automate the browersify and npm-css process
 
