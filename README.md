@@ -7,7 +7,9 @@ A simple app to manage finances
 * I love mint and also mint bills, but wanted more control and ability to forecast
 my current and future expenses. So I built this. I've been using this pretty consistently
 over the past 4 or so months and it has worked out great. I open sourced it in hopes
-that others might find it useful as well. Blog post explaining more coming soon. A demo
+that others might find it useful as well. Check out this
+[blog post](http://blog.khaliqgant.com/post/141000794547/my-personal-finance-app)
+to learn more about the motivation behind this. A demo
 app is hosted at http://finance.khaliqgant.com/
 
 
