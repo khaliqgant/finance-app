@@ -105,6 +105,10 @@ h3.subheader a{
     list-style: none;
 }
 
+.bank {
+    color: green;
+}
+
 .numerical {
     font-weight: bold;
 }
@@ -117,7 +121,7 @@ h3.subheader a{
 }
 .panel.callout.trends{
     position: fixed;
-    top: 225px;
+    top: 300px;
     width: 400px;
     display:block;
     background-color: #CCFFCC;
