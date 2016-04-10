@@ -3,8 +3,9 @@ alias dev='tab "watchify public/assets/js/finances.js -o public/assets/js/app.js
 alias js:watch='watchify public/assets/js/finances.js -o public/assets/js/app.js -v'
 alias css:compile='(cd public/assets/css && npm-css finances.css -o app.css)'
 alias deploy='(cd deploy && ansible-playbook deploy.yml)'
-alias server:run='nodemon server.js'
+alias server='nodemon server.js'
 alias upload:data='sshpass -f auth/.pass rsync -r data khaliqgant:/home/kjg/finances -v'
+alias upload:config='rsync config.json khaliqgant:/home/kjg/finances -v'
 alias es='/usr/local/bin/elasticsearch --config=/usr/local/opt/elasticsearch/config/elasticsearch.yml'
 
 dropbox_data=~/Dropbox\ \(Personal\)/KJG/Personal/Finances/App\ Data\ Backup/
