@@ -166,7 +166,7 @@ var Server = {
      * @use utility ajax GET request
      * @return ajax promise
      */
-    getPromise : function(endpoint, callback) {
+    getPromise : function(endpoint) {
         return $.ajax({
             type: 'GET',
             url: endpoint,
