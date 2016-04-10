@@ -5,7 +5,7 @@ html.
 		<meta name="description" content="description">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-		<title>Khaliq's Finances</title>
+		<title>#{title}</title>
 
 		<link rel="stylesheet" media="screen" href="/assets/css/app.css" />
 		<link rel="stylesheet" media="screen" href="/assets/css/vis.min.css" />
@@ -77,6 +77,12 @@ html.
 
 		<main>
 			<div class="mobile m-overview js-dropdown">
+				<div class="dropdown">
+					Checking : <span class="js-checking bank numerical"></span>
+				</div>
+				<div class="dropdown">
+					Savings : <span class="js-savings bank numerical"></span>
+				</div>
 				<div class="js-difference dropdown">
 					Remaining : <span class="js-short numerical"></span>
 				</div>
@@ -124,6 +130,12 @@ html.
 					<h4>Overview</h4>
 					<div class="js-info">
 						Today is <span class="js-date"></span>
+					</div>
+					<div class="dropdown">
+						Checking : <span class="js-checking bank numerical"></span>
+					</div>
+					<div class="dropdown">
+						Savings : <span class="js-savings bank numerical"></span>
 					</div>
 					<div class="js-difference">
 						Remaining : <span class="js-short numerical"></span>
