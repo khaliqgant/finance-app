@@ -1,0 +1,29 @@
+{
+  "plaid": {
+    "client_id": "some-hash",
+    "secret": "some-hash",
+    "public_key": "some-hash"
+  },
+  "accounts": {
+    "wells": {
+      "id": "wells",
+      "username": "some-user",
+      "password": "some-super-secure-password",
+      "type": {
+        "checking": "the number in meta.number",
+        "savings": "the number in meta.number",
+        "loan": "the number in meta.number"
+      }
+    },
+    "bofa": {
+      "id": "bofa",
+      "username": "some-user",
+      "password": "some-super-secure-password",
+      "type": {
+          "cash": "the number in meta.number",
+          "travel": "the number in meta.number"
+      }
+    }
+  }
+}
+
