@@ -7,6 +7,7 @@ auth/*
 *.pyc
 /elasticsearch/schema.json
 /logs
+config.json
 
 #c ignore https://github.com/github/gitignore/blob/master/C.gitignore
 # Object files
