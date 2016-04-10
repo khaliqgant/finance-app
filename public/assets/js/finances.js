@@ -25,6 +25,7 @@ var $           = require('jquery');
 var _           = require('underscore');
 var Backbone    = require('backbone');
 var server      = require('./server');
+var connect     = require('./connect');
 var vars        = require('./vars');
 var moment      = require('moment');
 var sweetAlert  = require('sweetalert');
@@ -93,6 +94,7 @@ var Finances = (function(){
                     methods.updateOverview();
                     methods.addNotePluses();
                     methods.computeTrends();
+                    methods.getAndWriteBalances();
                 }
             });
 
@@ -472,6 +474,80 @@ var Finances = (function(){
         addNotePluses : function() {
             $(vars.notes + ' .circle').each(function(){
                 $(this).append(vars.plusHtml);
+            });
+        },
+
+        /**
+         * Get And Write Balances
+         * @use grab credit and debit balances using connect api
+         */
+        getAndWriteBalances: function() {
+            // this will get written to file as well if different
+            var changed = false;
+            var changedArray = [];
+            connect.get('bofa').then(function(balance) {
+                if (+app.money.model.get('debt')
+                        .credit_cards.visa.bofa_cash !== balance.cash)
+                {
+                    app.money.model.get('debt')
+                        .credit_cards.visa.bofa_cash = balance.cash;
+                    changed = true;
+                    changedArray.push('bofa_cash');
+                }
+
+                if (+app.money.model.get('debt')
+                        .credit_cards.visa.bofa_travel !== balance.travel)
+                {
+                    app.money.model.get('debt')
+                        .credit_cards.visa.bofa_travel = balance.travel;
+                    changed = true;
+                    changedArray.push('bofa_travel');
+                }
+
+                if (changed) {
+                    methods.reSyncDebt(changedArray);
+                }
+
+            });
+
+            connect.get('wells').then(function(balance) {
+                $(vars.overview.checking).text('$' + balance.checking);
+                $(vars.overview.savings).text('$' + balance.savings);
+            });
+
+
+        },
+
+        /**
+         * Re Sync Debt
+         * @use iterate through based on the model and update the DOM
+         */
+        reSyncDebt: function(changedArray) {
+            _.each(app.money.model.get('debt').credit_cards, function(cat,cards)
+            {
+                _.each(cat, function(value, card) {
+                    if (changedArray.indexOf(card) !== -1) {
+                        $(vars.debt + ' .circle[data-name='+cards.ucfirst()+']')
+                            .find('li[data-key='+card+']').find('.numerical')
+                            .attr('data-value', value)
+                            .html('$'+ value + vars.pencilHtml);
+                        // now save this to the db
+                        server.postIt(
+                            'debt',
+                            'debt',
+                            card,
+                            value,
+                            cards,
+                            'credit_cards',
+                            app.date,
+                            function(result) {
+                                if (result) {
+                                    // file updated successfully
+                                    //console.log(result);
+                                }
+                            });
+                    }
+                });
             });
         },
 

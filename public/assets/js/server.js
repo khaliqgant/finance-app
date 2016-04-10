@@ -9,10 +9,11 @@
 
 'use strict';
 
-var $ = require('jquery');
-var vars = require('./vars');
-var moment = require('moment');
+var $        = require('jquery');
+var vars     = require('./vars');
+var moment   = require('moment');
 var Backbone = require('backbone');
+var Q        = require('q');
 
 var Server = {
     /**

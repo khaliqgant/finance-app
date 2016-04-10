@@ -17,7 +17,8 @@ var routes = require('./routes/index');
 
 var app = express();
 var trends = require('./analysis/trends');
-var api = require('./api');
+var api = require('./api/info');
+var connect = require('./api/connect');
 
 if (app.get('env') === 'prod') {
     app.use(auth.connect(basic));
@@ -44,6 +45,33 @@ app.use('/', routes);
 app.get('/api', function(req, res){
     res.json(api.get());
 });
+
+/**
+ * API Account
+ * @use grab balance of an api account
+ * example: api/bofa?type=credit
+ */
+app.get('/api/:account', function(req, res){
+    var account = req.params.account;
+    var type = [];
+    if (req.query.type !== undefined) {
+        type = req.query.type.split(',');
+    }
+    if (app.get('env') !== 'prod') {
+        // fake it until it's looking good
+        if (account === 'wells') {
+            res.json({checking: 92, savings: 600});
+        }
+        if (account === 'bofa') {
+            res.json({cash: 346, travel: 3334});
+        }
+    } else {
+        connect.get(account, type, function(balance) {
+            res.json(balance);
+        });
+    }
+});
+
 
 /**
  * Post
