@@ -45,6 +45,8 @@ var Vars = {
         short : '.js-short',
         date : '.js-date',
         left : '.js-left',
+        checking: '.js-checking',
+        savings: '.js-savings',
     },
     ring : '.js-ring',
     paid : '.js-paid',
