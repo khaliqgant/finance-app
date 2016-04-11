@@ -24690,7 +24690,7 @@ var Finances = (function(){
                             function(result) {
                                 if (result) {
                                     // file updated successfully
-                                    //console.log(result);
+                                    methods.calculations.debt();
                                 }
                             });
                     }
