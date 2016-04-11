@@ -57,7 +57,7 @@ app.get('/api/:account', function(req, res){
     if (req.query.type !== undefined) {
         type = req.query.type.split(',');
     }
-    if (app.get('env') !== 'prod') {
+    if (app.get('env') !== 'prod' && type.indexOf('new') === -1) {
         // fake it until it's looking good
         if (account === 'wells') {
             res.json({checking: 92, savings: 600});
