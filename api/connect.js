@@ -92,7 +92,7 @@ var connect = {
             // keep this for local dev
             console.log(account);
             console.log(err);
-            if (resp.hasOwnProperty('accounts')) {
+            if (resp !== null && resp.hasOwnProperty('accounts')) {
                 console.log(resp.accounts[0].meta);
                 console.log(resp.accounts[0].balance);
                 console.log(resp.accounts[1].meta);
