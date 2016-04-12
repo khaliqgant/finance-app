@@ -486,33 +486,37 @@ var Finances = (function(){
             var changed = false;
             var changedArray = [];
             connect.get('bofa').then(function(balance) {
-                if (+app.money.model.get('debt')
-                        .credit_cards.visa.bofa_cash !== balance.cash)
-                {
-                    app.money.model.get('debt')
-                        .credit_cards.visa.bofa_cash = balance.cash;
-                    changed = true;
-                    changedArray.push('bofa_cash');
-                }
+                if (balance !== null) {
+                    if (+app.money.model.get('debt')
+                            .credit_cards.visa.bofa_cash !== balance.cash)
+                    {
+                        app.money.model.get('debt')
+                            .credit_cards.visa.bofa_cash = balance.cash;
+                        changed = true;
+                        changedArray.push('bofa_cash');
+                    }
 
-                if (+app.money.model.get('debt')
-                        .credit_cards.visa.bofa_travel !== balance.travel)
-                {
-                    app.money.model.get('debt')
-                        .credit_cards.visa.bofa_travel = balance.travel;
-                    changed = true;
-                    changedArray.push('bofa_travel');
-                }
+                    if (+app.money.model.get('debt')
+                            .credit_cards.visa.bofa_travel !== balance.travel)
+                    {
+                        app.money.model.get('debt')
+                            .credit_cards.visa.bofa_travel = balance.travel;
+                        changed = true;
+                        changedArray.push('bofa_travel');
+                    }
 
-                if (changed) {
-                    methods.reSyncDebt(changedArray);
+                    if (changed) {
+                        methods.reSyncDebt(changedArray);
+                    }
                 }
 
             });
 
             connect.get('wells').then(function(balance) {
-                $(vars.overview.checking).text('$' + balance.checking);
-                $(vars.overview.savings).text('$' + balance.savings);
+                if (balance !== null) {
+                    $(vars.overview.checking).text('$' + balance.checking);
+                    $(vars.overview.savings).text('$' + balance.savings);
+                }
             });
 
 
