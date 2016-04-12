@@ -90,11 +90,11 @@ var connect = {
         var token = config.accounts[account].access_token;
         this.client.getBalance(token, function(err, resp){
             // keep this for local dev
+            console.log(err);
             console.log(resp.accounts[0].meta);
             console.log(resp.accounts[0].balance);
             console.log(resp.accounts[1].meta);
             console.log(resp.accounts[1].balance);
-            console.log(err);
 
             var balances = self.findBalancesByType(account, type, resp);
             callback(balances);
