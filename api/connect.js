@@ -101,6 +101,8 @@ var connect = {
                 var balances = self.findBalancesByType(account, type, resp);
                 callback(balances);
             } else {
+                // run a patch user call
+                //plaidClient.patchAuthUser(access_token, credentials, options, callback);
                 callback(null);
             }
         });
