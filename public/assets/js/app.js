@@ -24198,7 +24198,8 @@ var Finances = (function(){
         toPay : 0,
         ring : 0,
         sections : ['debt','cash', 'to_pay', 'notes', 'links'],
-        visualize: {}
+        visualize: {},
+        balancesRetrieved: false,
     };
 
     /**
@@ -24629,43 +24630,48 @@ var Finances = (function(){
          * @use grab credit and debit balances using connect api
          */
         getAndWriteBalances: function() {
-            // this will get written to file as well if different
-            var changed = false;
-            var changedArray = [];
-            connect.get('bofa').then(function(balance) {
-                if (balance !== null) {
-                    if (+app.money.model.get('debt')
-                            .credit_cards.visa.bofa_cash !== balance.cash)
-                    {
-                        app.money.model.get('debt')
-                            .credit_cards.visa.bofa_cash = balance.cash;
-                        changed = true;
-                        changedArray.push('bofa_cash');
+            // only make these API calls once
+            if (!app.balancesRetrieved) {
+                // this will get written to file as well if different
+                var changed = false;
+                var changedArray = [];
+                connect.get('bofa').then(function(balance) {
+                    if (balance !== null) {
+                        if (+app.money.model.get('debt')
+                                .credit_cards.visa.bofa_cash !== balance.cash)
+                        {
+                            app.money.model.get('debt')
+                                .credit_cards.visa.bofa_cash = balance.cash;
+                            changed = true;
+                            changedArray.push('bofa_cash');
+                        }
+
+                        if (+app.money.model.get('debt')
+                                .credit_cards.visa.bofa_travel !== balance.travel)
+                        {
+                            app.money.model.get('debt')
+                                .credit_cards.visa.bofa_travel = balance.travel;
+                            changed = true;
+                            changedArray.push('bofa_travel');
+                        }
+
+                        if (changed) {
+                            methods.reSyncDebt(changedArray);
+                        }
                     }
+                    app.balancesRetrieved = true;
 
-                    if (+app.money.model.get('debt')
-                            .credit_cards.visa.bofa_travel !== balance.travel)
-                    {
-                        app.money.model.get('debt')
-                            .credit_cards.visa.bofa_travel = balance.travel;
-                        changed = true;
-                        changedArray.push('bofa_travel');
+                });
+
+                connect.get('wells').then(function(balance) {
+                    if (balance !== null) {
+                        $(vars.overview.checking).text('$' + balance.checking);
+                        $(vars.overview.savings).text('$' + balance.savings);
                     }
+                    app.balancesRetrieved = true;
+                });
 
-                    if (changed) {
-                        methods.reSyncDebt(changedArray);
-                    }
-                }
-
-            });
-
-            connect.get('wells').then(function(balance) {
-                if (balance !== null) {
-                    $(vars.overview.checking).text('$' + balance.checking);
-                    $(vars.overview.savings).text('$' + balance.savings);
-                }
-            });
-
+            }
 
         },
 
