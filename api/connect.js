@@ -88,6 +88,7 @@ var connect = {
     getBalance: function(account, type, callback) {
         var self = this;
         var token = config.accounts[account].access_token;
+
         this.client.getBalance(token, function(err, resp){
             // keep this for local dev
             console.log(account);
@@ -102,7 +103,15 @@ var connect = {
                 callback(balances);
             } else {
                 // run a patch user call
-                //plaidClient.patchAuthUser(access_token, credentials, options, callback);
+                self.creds.username = config.accounts[account].username;
+                self.creds.password = config.accounts[account].password;
+                console.log('Patching: '+ account);
+                self.client.patchAuthUser(token, self.creds, {},
+                function(err, resp)
+                {
+                    console.log(err);
+                    console.log(resp);
+                });
                 callback(null);
             }
         });
