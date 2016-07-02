@@ -21019,7 +21019,9 @@ var Vars = {
         checking: '.js-checking',
         savings: '.js-savings',
     },
-    ring : '.js-ring',
+    investmentContainer: '.investments',
+    investmentsClass: 'js-investments',
+    investments : '.js-investments',
     paid : '.js-paid',
     pencil : '.js-pencil',
     confirm : '.js-confirm',
@@ -24196,7 +24198,7 @@ var Finances = (function(){
         income : 0,
         debt : 0,
         toPay : 0,
-        ring : 0,
+        investments : 0,
         sections : ['debt','cash', 'to_pay', 'notes', 'links'],
         visualize: {},
         balancesRetrieved: false,
@@ -24602,12 +24604,14 @@ var Finances = (function(){
         },
 
         postApplications : function(){
-            // ring is optional
-            $('.ring').append(
-                '<input class="checkbox js-ring" type="checkbox">'
+            // investments are optional
+            $(vars.investmentContainer).append(
+                '<input class="checkbox '+vars.investmentsClass+
+                '" type="checkbox">'
             );
-            $(vars.ring).prop('checked',true);
-            app.ring = $('.ring').find('.numerical').attr('data-value');
+            $(vars.investments).prop('checked', true);
+            app.investments = $(vars.investmentContainer)
+                .find('.numerical').attr('data-value');
 
             // how many notes are there?
             var notes = $(vars.notes).find('.section').length;
@@ -24961,13 +24965,13 @@ var Finances = (function(){
 
     var listeners = {
         init : function(){
-            $(document).on('change', vars.ring, function(){
+            $(document).on('change', vars.investments, function(){
                 var $parent = $(this).parent();
                 var $el = $parent.find('.numerical');
                 var checked = $(this).prop('checked');
                 if (checked) {
-                    $el.attr('data-value',app.ring);
-                    $el.text('$' + app.ring);
+                    $el.attr('data-value',app.investments);
+                    $el.text('$' + app.investments);
                 } else {
                     $el.attr('data-value',0);
                     $el.text('$0');
