@@ -61,6 +61,9 @@ var Vars = {
     eyeHtml: '<i class="fa fa-line-chart fa-1 js-visualize card-data"></i>',
     plusHtml : '<i class="fa fa-plus-circle js-add-note"></i>',
     addNote : '.js-add-note',
+    addNoteCategory: '.js-new-note',
+    noteCategoryInput: '.js-note-cat-input',
+    noteCategoryConfirm : '.js-confirm-note-category',
     dropdown : {
         listener :'.js-dropdown-activate',
         el :'.js-dropdown',

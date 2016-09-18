@@ -18,13 +18,13 @@ var Connect = {
     base: '/api',
     // should grab this from a config or something
     accounts: {
-        'wells': {
-            'url': '/wells',
-            'params': 'checking,savings'
+        wells: {
+            url: '/wells',
+            params: 'checking,savings'
         },
-        'bofa': {
-            'url': '/bofa',
-            'params': 'cash,travel'
+        bofa: {
+            url: '/bofa',
+            params: 'cash,travel'
         }
     },
 

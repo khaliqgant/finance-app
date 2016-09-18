@@ -20658,13 +20658,13 @@ var Connect = {
     base: '/api',
     // should grab this from a config or something
     accounts: {
-        'wells': {
-            'url': '/wells',
-            'params': 'checking,savings'
+        wells: {
+            url: '/wells',
+            params: 'checking,savings'
         },
-        'bofa': {
-            'url': '/bofa',
-            'params': 'cash,travel'
+        bofa: {
+            url: '/bofa',
+            params: 'cash,travel'
         }
     },
 
@@ -21032,6 +21032,9 @@ var Vars = {
     eyeHtml: '<i class="fa fa-line-chart fa-1 js-visualize card-data"></i>',
     plusHtml : '<i class="fa fa-plus-circle js-add-note"></i>',
     addNote : '.js-add-note',
+    addNoteCategory: '.js-new-note',
+    noteCategoryInput: '.js-note-cat-input',
+    noteCategoryConfirm : '.js-confirm-note-category',
     dropdown : {
         listener :'.js-dropdown-activate',
         el :'.js-dropdown',
@@ -25083,6 +25086,21 @@ var Finances = (function(){
             });
 
             /**
+             * Add Note Category Listener
+             */
+            $(document).on('click', vars.addNoteCategory, function() {
+                // make sure no note category isn't open already
+                if ($(vars.noteCategoryInput).length < 1) {
+                    listeners.methods.addNoteCategoryInput($(this));
+                }
+            });
+
+            $(document).on('click', vars.noteCategoryConfirm, function() {
+                var category = $(vars.noteCategoryInput).val();
+                // KJG finish
+            });
+
+            /**
              * Increase/Decrease Month Listener
              */
             $(document).on('click', vars.increaseMonth, function(e){
@@ -25293,6 +25311,21 @@ var Finances = (function(){
                         }
                     );
                 }
+            },
+
+            /**
+             * Add Note Category
+             * @desc add an input box to allow a new category to be made for a
+             *       note
+             */
+            addNoteCategoryInput: function($self) {
+                var noteInputHtml = '<input name="notes"' +
+                                'type="text" data-model="notes" '+
+                                'class="text-input js-note-cat-input">'+
+                                ' <i class="fa fa-check-circle '+
+                                'js-confirm-note-category">'+
+                                '</i>';
+                $self.after(noteInputHtml);
             },
 
             inputHandler : function($self) {
