@@ -20656,23 +20656,9 @@ var Backbone = require('backbone');
 
 var Connect = {
     base: '/api',
-    // should grab this from a config or something
-    accounts: {
-        'wells': {
-            'url': '/wells',
-            'params': 'checking,savings'
-        },
-        'bofa': {
-            'url': '/bofa',
-            'params': 'cash,travel'
-        }
-    },
 
     buildUrl: function(account) {
-        return this.base +
-               this.accounts[account].url +
-               '?type=' +
-               this.accounts[account].params;
+        return this.base + '/'+ account;
     },
 
     get: function(account) {
@@ -24667,10 +24653,10 @@ var Finances = (function(){
 
                 });
 
-                connect.get('wells').then(function(balance) {
+                connect.get('checking').then(function(balance) {
                     if (balance !== null) {
-                        $(vars.overview.checking).text('$' + balance.checking);
-                        $(vars.overview.savings).text('$' + balance.savings);
+                        $(vars.overview.checking).text('$' + balance.depository);
+                        $(vars.overview.savings).text('$' + balance.brokerage);
                     }
                     app.balancesRetrieved = true;
                 });

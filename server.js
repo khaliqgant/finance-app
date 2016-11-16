@@ -19,6 +19,7 @@ var app = express();
 var trends = require('./analysis/trends');
 var api = require('./api/info');
 var connect = require('./api/connect');
+var config = JSON.parse(fs.readFileSync('config.json'));
 
 if (app.get('env') === 'prod') {
     app.use(auth.connect(basic));
@@ -54,13 +55,19 @@ app.get('/api', function(req, res){
 app.get('/api/:account', function(req, res){
     var account = req.params.account;
     var type = [];
-    if (req.query.type !== undefined) {
-        type = req.query.type.split(',');
+    var i;
+
+    // use the aliases to map this info for each type
+    for (i = 0; i < config.active_aliases.length; i++)
+    {
+        var id = config.active_alises[account];
+        type = config[id][type];
     }
+
     if (app.get('env') !== 'prod' && type.indexOf('new') === -1) {
         // fake it until it's looking good
-        if (account === 'wells') {
-            res.json({checking: 92, savings: 600});
+        if (account === 'checking') {
+            res.json({depository: 92, brokerage: 600});
         }
         if (account === 'bofa') {
             res.json({cash: 346, travel: 3334});

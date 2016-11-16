@@ -518,10 +518,10 @@ var Finances = (function(){
 
                 });
 
-                connect.get('wells').then(function(balance) {
+                connect.get('checking').then(function(balance) {
                     if (balance !== null) {
-                        $(vars.overview.checking).text('$' + balance.checking);
-                        $(vars.overview.savings).text('$' + balance.savings);
+                        $(vars.overview.checking).text('$' + balance.depository);
+                        $(vars.overview.savings).text('$' + balance.brokerage);
                     }
                     app.balancesRetrieved = true;
                 });
