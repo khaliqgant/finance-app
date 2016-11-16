@@ -54,15 +54,8 @@ app.get('/api', function(req, res){
  */
 app.get('/api/:account', function(req, res){
     var account = req.params.account;
-    var type = [];
+    var type = Object.keys(config.accounts[account].type);
     var i;
-
-    // use the aliases to map this info for each type
-    for (i = 0; i < config.active_aliases.length; i++)
-    {
-        var id = config.active_alises[account];
-        type = config[id][type];
-    }
 
     if (app.get('env') !== 'prod' && type.indexOf('new') === -1) {
         // fake it until it's looking good
