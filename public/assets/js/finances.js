@@ -11,6 +11,7 @@
  *      sweetAlert : https://github.com/t4t5/sweetalert
  *      Q : https://github.com/kriskowal/q
  *      vis : https://github.com/almende/vis
+ *      fx : https://github.com/openexchangerates/money.js
  */
 
 /* global document */
@@ -27,6 +28,7 @@ var Backbone    = require('backbone');
 var server      = require('./server');
 var connect     = require('./connect');
 var vars        = require('./vars');
+var openEx      = require('./open-exchange');
 var moment      = require('moment');
 var sweetAlert  = require('sweetalert');
 var enquire     = require('enquire.js');
@@ -34,6 +36,7 @@ var bunyan      = require('bunyan');
 var TapListener = require('tap-listener');
 var Q           = require('q');
 var vis         = require('vis');
+var fx          = require('money');
 
 var Finances = (function(){
     var debug = false;
@@ -104,6 +107,34 @@ var Finances = (function(){
     });
 
     var methods = {
+        /**
+         * Kick Off
+         * @desc methods to run only once on app start
+         */
+        kickOff: function() {
+            $.getJSON(
+                openEx.url + openEx.id,
+                function(data) {
+                    // Check money.js has finished loading:
+                    if (typeof(fx) !== 'undefined' && fx.rates) {
+                        fx.rates = data.rates;
+                        fx.base = data.base;
+
+                        vars.exchange = data.rates[openEx.currency];
+                    } else {
+                        // If not, apply to fxSetup global:
+                        var fxSetup = {
+                            rates : data.rates,
+                            base : data.base
+                        };
+                        vars.exchange = data.rates[openEx.currency];
+                    }
+                    $(vars.overview.rate).text(openEx.currency);
+                    $(vars.overview.fx).text(vars.exchange);
+                }
+            );
+        },
+
         init : function() {
             var Month = Backbone.Model.extend({
                 url : 'data/' + app.date + '.json',
@@ -520,8 +551,21 @@ var Finances = (function(){
 
                 connect.get('checking').then(function(balance) {
                     if (balance !== null) {
-                        $(vars.overview.checking).text('$' + balance.depository);
-                        $(vars.overview.savings).text('$' + balance.brokerage);
+                        var convert;
+                        convert = fx(balance.depository)
+                                .from(openEx.base)
+                                .to(openEx.currency);
+                        $(vars.overview.checking).text(
+                            '$' + balance.depository +
+                            ' (' + convert + ' ' + openEx.currency + ')'
+                        );
+                        convert = fx(balance.brokerage)
+                                .from(openEx.base)
+                                .to(openEx.currency);
+                        $(vars.overview.savings).text(
+                            '$' + balance.brokerage +
+                            ' (' + convert + ' ' + openEx.currency + ')'
+                        );
                     }
                     app.balancesRetrieved = true;
                 });
@@ -1258,6 +1302,7 @@ var Finances = (function(){
 })();
 
 $(document).ready(function() {
+    Finances.methods.kickOff();
     Finances.methods.init();
     Finances.listeners.init();
 });

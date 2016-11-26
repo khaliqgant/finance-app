@@ -18,3 +18,5 @@ config.json
 
 # Rope
 .ropeproject
+
+public/assets/js/open-exchange.js

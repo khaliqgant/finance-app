@@ -44,6 +44,8 @@ var Vars = {
     overview : {
         short : '.js-short',
         date : '.js-date',
+        rate: '.js-rate',
+        fx: '.js-fx',
         left : '.js-left',
         checking: '.js-checking',
         savings: '.js-savings',
