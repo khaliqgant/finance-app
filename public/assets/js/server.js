@@ -262,15 +262,6 @@ var Server = {
             });
         },
 
-        /**
-         * Add Section
-         * @use add in a note section
-         */
-        addSection : function(data,callback) {
-            // TODO
-
-        },
-
         removeSection : function(data,callback) {
             // TODO
 

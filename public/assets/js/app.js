@@ -67315,27 +67315,31 @@ var Finances = (function(){
          * @desc methods to run only once on app start
          */
         kickOff: function() {
-            $.getJSON(
-                openEx.url + openEx.id,
-                function(data) {
-                    // Check money.js has finished loading:
-                    if (typeof(fx) !== 'undefined' && fx.rates) {
-                        fx.rates = data.rates;
-                        fx.base = data.base;
+            if (!vars.isLocal) {
+                $.getJSON(
+                    openEx.url + openEx.id,
+                    function(data) {
+                        // Check money.js has finished loading:
+                        if (typeof(fx) !== 'undefined' && fx.rates) {
+                            fx.rates = data.rates;
+                            fx.base = data.base;
 
-                        vars.exchange = data.rates[openEx.currency];
-                    } else {
-                        // If not, apply to fxSetup global:
-                        var fxSetup = {
-                            rates : data.rates,
-                            base : data.base
-                        };
-                        vars.exchange = data.rates[openEx.currency];
+                            vars.exchange = data.rates[openEx.currency];
+                        } else {
+                            // If not, apply to fxSetup global:
+                            var fxSetup = {
+                                rates : data.rates,
+                                base : data.base
+                            };
+                            vars.exchange = data.rates[openEx.currency];
+                        }
+                        $(vars.overview.rate).text(openEx.currency);
+                        $(vars.overview.fx).text(vars.exchange);
                     }
-                    $(vars.overview.rate).text(openEx.currency);
-                    $(vars.overview.fx).text(vars.exchange);
-                }
-            );
+                );
+            } else {
+                 $(vars.overview.rate).parent().hide();
+            }
         },
 
         init : function() {
@@ -67755,18 +67759,26 @@ var Finances = (function(){
                 connect.get('checking').then(function(balance) {
                     if (balance !== null) {
                         var convert;
-                        convert = fx(balance.depository)
-                                .from(openEx.base)
-                                .to(openEx.currency)
-                                .toFixed(2);
+                        if (!vars.isLocal) {
+                            convert = fx(balance.depository)
+                                    .from(openEx.base)
+                                    .to(openEx.currency)
+                                    .toFixed(2);
+                        } else {
+                            convert = 0;
+                        }
                         $(vars.overview.checking).text(
                             '$' + balance.depository +
                             ' (' + convert + ' ' + openEx.currency + ')'
                         );
-                        convert = fx(balance.brokerage)
-                                .from(openEx.base)
-                                .to(openEx.currency)
-                                .toFixed(2);
+                        if (!vars.isLocal) {
+                            convert = fx(balance.brokerage)
+                                    .from(openEx.base)
+                                    .to(openEx.currency)
+                                    .toFixed(2);
+                        } else {
+                             convert = 0;
+                        }
                         $(vars.overview.savings).text(
                             '$' + balance.brokerage +
                             ' (' + convert + ' ' + openEx.currency + ')'
@@ -68183,6 +68195,34 @@ var Finances = (function(){
             });
 
             /**
+             * Add Note Section
+             * @event click
+             * @desc show the input box and confirm button
+             */
+            $(document).on('click', vars.newNoteCategory, function() {
+                var noteCatHtml = '<input name="notes"' +
+                                'type="text" ' +
+                                'class="text-input js-note-cat-input">'+
+                                ' <i class="fa fa-check-circle '+
+                                'js-new-note-category">'+
+                                '</i>';
+                $(this).replaceWith(noteCatHtml);
+            });
+
+            /**
+             * Confirm note add || enter on input box
+             */
+            $(document).on('click', vars.addNoteCategory, function(){
+                var $self = $(this).prev();
+                listeners.methods.addNoteCatHandler($self);
+            });
+            $(document).on('keyup', vars.noteCatInput, function(e){
+                if (e.keyCode === 13) {
+                    listeners.methods.addNoteCatHandler($(this));
+                }
+            });
+
+            /**
              * Increase/Decrease Month Listener
              */
             $(document).on('click', vars.increaseMonth, function(e){
@@ -68393,6 +68433,28 @@ var Finances = (function(){
                         }
                     );
                 }
+            },
+
+            /**
+             * Add Note Cat Handler
+             * @desc take in information and send to the server for the new
+             *       note category
+             * @param {object} $el
+             */
+            addNoteCatHandler: function($el) {
+                var data = {
+                    file: app.money.model.get('notes').file,
+                    category: $el.val()
+                };
+                var endpoint = 'addNoteCategory';
+                server.postPromise(data, endpoint).then(function(resp) {
+                    // replace the content category content and remove content
+                    $(vars.addNoteCategory).remove();
+                    $(vars.noteCatInput).replaceWith(vars.noteCatHtml);
+                    methods.reset(function(done){
+                        methods.init();
+                    });
+                });
             },
 
             inputHandler : function($self) {
@@ -68798,15 +68860,6 @@ var Server = {
             });
         },
 
-        /**
-         * Add Section
-         * @use add in a note section
-         */
-        addSection : function(data,callback) {
-            // TODO
-
-        },
-
         removeSection : function(data,callback) {
             // TODO
 
@@ -68827,9 +68880,12 @@ module.exports = Server;
 
 'use strict';
 
+/* global location */
+
 var moment = require('moment');
 
 var Vars = {
+    isLocal : !!~location.href.indexOf('localhost'),
     date : moment().format('YYYY_MM'),
     cash : '.js-cash',
     debt : '.js-debt',
@@ -68878,10 +68934,14 @@ var Vars = {
     noteConfirm : '.js-confirm-note',
     payInput : '.js-pay-input',
     noteInput : '.js-note-input',
+    noteCatInput: '.js-note-cat-input',
     pencilHtml : ' <i class="fa fa-pencil-square-o js-pencil"></i>',
     eyeHtml: '<i class="fa fa-line-chart fa-1 js-visualize card-data"></i>',
     plusHtml : '<i class="fa fa-plus-circle js-add-note"></i>',
     addNote : '.js-add-note',
+    newNoteCategory: '.js-new-note',
+    addNoteCategory: '.js-new-note-category',
+    noteCatHtml: '<i class="fa fa-plus-circle js-new-note"></i>',
     dropdown : {
         listener :'.js-dropdown-activate',
         el :'.js-dropdown',

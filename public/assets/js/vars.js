@@ -8,9 +8,12 @@
 
 'use strict';
 
+/* global location */
+
 var moment = require('moment');
 
 var Vars = {
+    isLocal : !!~location.href.indexOf('localhost'),
     date : moment().format('YYYY_MM'),
     cash : '.js-cash',
     debt : '.js-debt',
@@ -59,10 +62,14 @@ var Vars = {
     noteConfirm : '.js-confirm-note',
     payInput : '.js-pay-input',
     noteInput : '.js-note-input',
+    noteCatInput: '.js-note-cat-input',
     pencilHtml : ' <i class="fa fa-pencil-square-o js-pencil"></i>',
     eyeHtml: '<i class="fa fa-line-chart fa-1 js-visualize card-data"></i>',
     plusHtml : '<i class="fa fa-plus-circle js-add-note"></i>',
     addNote : '.js-add-note',
+    newNoteCategory: '.js-new-note',
+    addNoteCategory: '.js-new-note-category',
+    noteCatHtml: '<i class="fa fa-plus-circle js-new-note"></i>',
     dropdown : {
         listener :'.js-dropdown-activate',
         el :'.js-dropdown',

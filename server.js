@@ -186,6 +186,23 @@ app.post('/addNote', function(req,res){
 });
 
 /**
+ * Add Note Category
+ * @desc add a note category and append to the array
+ */
+app.post('/addNoteCategory', function(req,res) {
+    var category = req.body.category;
+    var filename = req.body.file;
+
+    var file = fs.readFileSync('data/'+filename);
+    var content = JSON.parse(file);
+
+    // make the new category as an array
+    content.notes[category] = [];
+    fs.writeFileSync('data/'+filename, JSON.stringify(content));
+    res.json(content);
+});
+
+/**
  * New
  * @use make a new month and copy over the necessary data
  */

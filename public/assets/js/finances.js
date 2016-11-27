@@ -992,6 +992,34 @@ var Finances = (function(){
             });
 
             /**
+             * Add Note Section
+             * @event click
+             * @desc show the input box and confirm button
+             */
+            $(document).on('click', vars.newNoteCategory, function() {
+                var noteCatHtml = '<input name="notes"' +
+                                'type="text" ' +
+                                'class="text-input js-note-cat-input">'+
+                                ' <i class="fa fa-check-circle '+
+                                'js-new-note-category">'+
+                                '</i>';
+                $(this).replaceWith(noteCatHtml);
+            });
+
+            /**
+             * Confirm note add || enter on input box
+             */
+            $(document).on('click', vars.addNoteCategory, function(){
+                var $self = $(this).prev();
+                listeners.methods.addNoteCatHandler($self);
+            });
+            $(document).on('keyup', vars.noteCatInput, function(e){
+                if (e.keyCode === 13) {
+                    listeners.methods.addNoteCatHandler($(this));
+                }
+            });
+
+            /**
              * Increase/Decrease Month Listener
              */
             $(document).on('click', vars.increaseMonth, function(e){
@@ -1202,6 +1230,28 @@ var Finances = (function(){
                         }
                     );
                 }
+            },
+
+            /**
+             * Add Note Cat Handler
+             * @desc take in information and send to the server for the new
+             *       note category
+             * @param {object} $el
+             */
+            addNoteCatHandler: function($el) {
+                var data = {
+                    file: app.money.model.get('notes').file,
+                    category: $el.val()
+                };
+                var endpoint = 'addNoteCategory';
+                server.postPromise(data, endpoint).then(function(resp) {
+                    // replace the content category content and remove content
+                    $(vars.addNoteCategory).remove();
+                    $(vars.noteCatInput).replaceWith(vars.noteCatHtml);
+                    methods.reset(function(done){
+                        methods.init();
+                    });
+                });
             },
 
             inputHandler : function($self) {
