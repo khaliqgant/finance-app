@@ -554,14 +554,16 @@ var Finances = (function(){
                         var convert;
                         convert = fx(balance.depository)
                                 .from(openEx.base)
-                                .to(openEx.currency);
+                                .to(openEx.currency)
+                                .toFixed(2);
                         $(vars.overview.checking).text(
                             '$' + balance.depository +
                             ' (' + convert + ' ' + openEx.currency + ')'
                         );
                         convert = fx(balance.brokerage)
                                 .from(openEx.base)
-                                .to(openEx.currency);
+                                .to(openEx.currency)
+                                .toFixed(2);
                         $(vars.overview.savings).text(
                             '$' + balance.brokerage +
                             ' (' + convert + ' ' + openEx.currency + ')'
