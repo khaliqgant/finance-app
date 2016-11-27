@@ -112,27 +112,31 @@ var Finances = (function(){
          * @desc methods to run only once on app start
          */
         kickOff: function() {
-            $.getJSON(
-                openEx.url + openEx.id,
-                function(data) {
-                    // Check money.js has finished loading:
-                    if (typeof(fx) !== 'undefined' && fx.rates) {
-                        fx.rates = data.rates;
-                        fx.base = data.base;
+            if (!vars.isLocal) {
+                $.getJSON(
+                    openEx.url + openEx.id,
+                    function(data) {
+                        // Check money.js has finished loading:
+                        if (typeof(fx) !== 'undefined' && fx.rates) {
+                            fx.rates = data.rates;
+                            fx.base = data.base;
 
-                        vars.exchange = data.rates[openEx.currency];
-                    } else {
-                        // If not, apply to fxSetup global:
-                        var fxSetup = {
-                            rates : data.rates,
-                            base : data.base
-                        };
-                        vars.exchange = data.rates[openEx.currency];
+                            vars.exchange = data.rates[openEx.currency];
+                        } else {
+                            // If not, apply to fxSetup global:
+                            var fxSetup = {
+                                rates : data.rates,
+                                base : data.base
+                            };
+                            vars.exchange = data.rates[openEx.currency];
+                        }
+                        $(vars.overview.rate).text(openEx.currency);
+                        $(vars.overview.fx).text(vars.exchange);
                     }
-                    $(vars.overview.rate).text(openEx.currency);
-                    $(vars.overview.fx).text(vars.exchange);
-                }
-            );
+                );
+            } else {
+                 $(vars.overview.rate).parent().hide();
+            }
         },
 
         init : function() {
@@ -552,18 +556,26 @@ var Finances = (function(){
                 connect.get('checking').then(function(balance) {
                     if (balance !== null) {
                         var convert;
-                        convert = fx(balance.depository)
-                                .from(openEx.base)
-                                .to(openEx.currency)
-                                .toFixed(2);
+                        if (!vars.isLocal) {
+                            convert = fx(balance.depository)
+                                    .from(openEx.base)
+                                    .to(openEx.currency)
+                                    .toFixed(2);
+                        } else {
+                            convert = 0;
+                        }
                         $(vars.overview.checking).text(
                             '$' + balance.depository +
                             ' (' + convert + ' ' + openEx.currency + ')'
                         );
-                        convert = fx(balance.brokerage)
-                                .from(openEx.base)
-                                .to(openEx.currency)
-                                .toFixed(2);
+                        if (!vars.isLocal) {
+                            convert = fx(balance.brokerage)
+                                    .from(openEx.base)
+                                    .to(openEx.currency)
+                                    .toFixed(2);
+                        } else {
+                             convert = 0;
+                        }
                         $(vars.overview.savings).text(
                             '$' + balance.brokerage +
                             ' (' + convert + ' ' + openEx.currency + ')'
