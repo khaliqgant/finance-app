@@ -1174,7 +1174,7 @@ var Finances = (function(){
             /**
              * Enquire listener to make the dollar icon also be a dropdown
              */
-            enquire.register('screen and (max-width: 320px)', {
+            enquire.register('screen and (max-width: 375px)', {
                 match: function() {
                     $(document).on('click', vars.dropdown.listener, function(){
                         $(vars.dropdown.el).toggle();
