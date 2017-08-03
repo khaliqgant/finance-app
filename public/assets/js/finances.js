@@ -1,7 +1,7 @@
 /**
  * Finances.js
  * @author Khaliq Gant
- * @use main entry point into the app, this app manages state and makes calls
+ * @desc main entry point into the app, this app manages state and makes calls
  * @dependencies :
  *      Moment.js : https://github.com/moment/moment
  *      Backbone : http://backbonejs.org/
@@ -35,8 +35,11 @@ var enquire     = require('enquire.js');
 var bunyan      = require('bunyan');
 var TapListener = require('tap-listener');
 var Q           = require('q');
-var vis         = require('vis');
 var fx          = require('money');
+
+var VisualizationView = require('./views/visualization');
+
+var VisualizeModel = require('./models/visualize');
 
 var Finances = (function(){
     var debug = false;
@@ -54,13 +57,13 @@ var Finances = (function(){
         toPay : 0,
         investments : 0,
         sections : ['debt','cash', 'to_pay', 'notes', 'links'],
-        visualize: {},
+        visualize: VisualizeModel,
         balancesRetrieved: false,
     };
 
     /**
      * Financial View
-     * @use handles the render logic by grabbing corresponding JSON and
+     * @desc handles the render logic by grabbing corresponding JSON and
      *      nested json by iterating through the json keys and checking for a
      *      remote key
      */
@@ -174,7 +177,7 @@ var Finances = (function(){
 
         /**
          * Refresh
-         * @use restart the app with an reset then init call
+         * @desc restart the app with an reset then init call
          */
         refresh : function() {
             methods.reset(function(done){
@@ -201,7 +204,7 @@ var Finances = (function(){
         },
         /**
          * Render Data
-         * @use render data return from backbone model into the DOM
+         * @desc render data return from backbone model into the DOM
          * @param {object} data
          * @return void
          */
@@ -290,7 +293,7 @@ var Finances = (function(){
 
         /**
          * Append Nested
-         * @use append the nested values of key value pairs
+         * @desc append the nested values of key value pairs
          * @param {object} item
          * @param {object} value
          */
@@ -356,7 +359,7 @@ var Finances = (function(){
 
         /**
          * Template Builder
-         * @use formulate a template string based on some rules
+         * @desc formulate a template string based on some rules
          * @param {string} index
          * @param {boolean} nested
          * @return {string} template - underscore string function
@@ -432,7 +435,7 @@ var Finances = (function(){
 
         /**
          * Number Check
-         * @use check if a typeof string is actually a number
+         * @desc check if a typeof string is actually a number
          * @param {string} n
          * @ref http://stackoverflow.com/questions/16799469/how-to-check-if-a-string-is-a-natural-number
          */
@@ -446,7 +449,7 @@ var Finances = (function(){
 
         /**
          * Render Nested
-         * @use render the nested data of the object
+         * @desc render the nested data of the object
          * @param {object} els
          * @param {object} items
          * @return DOM manipulation
@@ -507,7 +510,7 @@ var Finances = (function(){
 
         /**
          * Add Note Pluses
-         * @use add in a plus sign to each note
+         * @desc add in a plus sign to each note
          */
         addNotePluses : function() {
             $(vars.notes + ' .circle').each(function(){
@@ -517,7 +520,7 @@ var Finances = (function(){
 
         /**
          * Get And Write Balances
-         * @use grab credit and debit balances using connect api
+         * @desc grab credit and debit balances using connect api
          */
         getAndWriteBalances: function() {
             // only make these API calls once
@@ -590,7 +593,7 @@ var Finances = (function(){
 
         /**
          * Re Sync Debt
-         * @use iterate through based on the model and update the DOM
+         * @desc iterate through based on the model and update the DOM
          */
         reSyncDebt: function(changedArray) {
             _.each(app.money.model.get('debt').credit_cards, function(cat,cards)
@@ -623,7 +626,7 @@ var Finances = (function(){
 
         /**
          * Compute Trends
-         * @use calculate trends and append to the trend box
+         * @desc calculate trends and append to the trend box
          *      and add information for visualization data
          */
         computeTrends : function() {
@@ -636,11 +639,9 @@ var Finances = (function(){
                     statsResponse.state === 'fulfilled')
                 {
                     // store this info for the visualizations
-                    Finances.app.visualize.all_cards =
-                        averageResponse.value.cards;
-                    Finances.app.visualize.all_dates =
-                        averageResponse.value.dates;
-                    Finances.app.visualize.stats = statsResponse.value;
+                    VisualizeModel.all_cards = averageResponse.value.cards;
+                    VisualizeModel.all_dates = averageResponse.value.dates;
+                    VisualizeModel.stats = statsResponse.value;
 
                     // add average to DOM
                     var average = averageResponse.value.average;
@@ -654,91 +655,6 @@ var Finances = (function(){
                         .addClass(diffClass);
                 }
             });
-        },
-
-        /**
-         * Create Visualizations
-         * @use leverage vis to display graph information for cc info
-         * @dependencies
-         *      2d: http://visjs.org/docs/graph2d/
-         *      custombox: http://dixso.github.io/custombox/
-         */
-        createVisualizations: function(el) {
-            Custombox.open({
-                target: '#visualize-overlay',
-                effect: 'push',
-                position: ['center', 'top'],
-                overlayOpacity: 1,
-                open: function() {
-                    var container = document.getElementById(
-                        vars.visualizations.show
-                    );
-                    var card_type = $(el).parents('.circle')
-                    .attr('data-name').toLowerCase();
-                    var card = $(el).parents('li').attr('data-key');
-                    var items = methods.createItems(card_type, card);
-                    var dataset = new vis.DataSet(items);
-
-                    var options = {
-                        orientation: 'top',
-                        autoResize: true
-                    };
-
-                    var graph2d = new vis.Graph2d(container, dataset, options);
-
-                    // add in stats and card header
-                    var cardType = card_type.ucfirst() + ' - ' + card.ucfirst()
-                                    .replace(/_/, ' ');
-                    $(vars.visualizations.card).text(cardType);
-
-                    // add in stats data
-                    var stats = Finances.app.visualize.stats;
-
-                    if (stats[card_type].hasOwnProperty(card)) {
-                        $(vars.visualizations.average).text(
-                            stats[card_type][card].avg
-                        );
-                        $(vars.visualizations.min).text(
-                            stats[card_type][card].min
-                        );
-                        $(vars.visualizations.max).text(
-                            stats[card_type][card].max
-                        );
-                    }
-                },
-                close: function() {
-                    $('#visualize-overlay').hide();
-                    $('#visualization').html('');
-                    $(document.body).scrollTop($('a[name="pay"]').offset().top);
-                },
-            });
-        },
-
-        /**
-         * Create Items
-         * @use return items array for visualization purposes
-         */
-        createItems: function(card_type, card) {
-            var items = [];
-            var all_cards = Finances.app.visualize.all_cards;
-            for(var i = 0; i < Finances.app.visualize.all_dates.length; i++)
-            {
-                if (all_cards[i][card_type].hasOwnProperty(card)) {
-                    items.push({
-                        x: Finances.app.visualize.all_dates[i]
-                            .replace(/_/, '-'),
-                        y: Finances.app.visualize.all_cards[i][card_type][card],
-                        label: {
-                            content: Finances.app.visualize.all_cards[i]
-                                        [card_type][card],
-                            className: 'visualize-text',
-                            xOffset: -40,
-                            yOffset: -15
-                        }
-                    });
-                }
-            }
-            return items;
         },
 
         updateOverview : function() {
@@ -786,7 +702,7 @@ var Finances = (function(){
 
             /**
              * Income
-             * @use given what is on the dom, make the calculation to find the
+             * @desc given what is on the dom, make the calculation to find the
              *      total income
              */
             income : function() {
@@ -891,7 +807,7 @@ var Finances = (function(){
 
             /**
              * Paid checkbox listener
-             * @use send off a post request when the paid checkbox is changed
+             * @desc send off a post request when the paid checkbox is changed
              */
             $(document).on('change', vars.paid, function(){
                 var checked = $(this).prop('checked');
@@ -916,17 +832,8 @@ var Finances = (function(){
             });
 
             /**
-             * Visualizations show listener
-             * @use show the associated card data view on click
-             */
-            $(document).on('click', vars.visualizations.listener, function(e) {
-                methods.createVisualizations(this);
-                e.preventDefault();
-            });
-
-            /**
              * Pencil click listener
-             * @use change value to a input box when a pencil is clicked
+             * @desc change value to a input box when a pencil is clicked
              */
             $(document).on('click', vars.pencil, function(){
                 var $li = $(this).parents('li');
@@ -966,7 +873,7 @@ var Finances = (function(){
 
             /**
              * Confirm input box || enter key in input
-             * @use change and send off post request and update
+             * @desc change and send off post request and update
              */
             $(document).on('click', vars.confirm, function(){
                 var $self = $(this).prev();
@@ -1078,7 +985,7 @@ var Finances = (function(){
 
             /**
              * Refresh
-             * @use refresh the app by clicking the refresh button
+             * @desc refresh the app by clicking the refresh button
              */
             $(document).on('click', vars.refresh, function(e){
                 methods.refresh();
@@ -1086,7 +993,7 @@ var Finances = (function(){
 
             /**
              * Remove
-             * @use action on trash can delete icon
+             * @desc action on trash can delete icon
              */
             $(document).on('click', vars.remove, function(e){
                 var content;
@@ -1209,7 +1116,7 @@ var Finances = (function(){
 
             /**
              * Add Note Handler
-             * @use logic to send post to add a note
+             * @desc logic to send post to add a note
              */
             addNoteHandler : function($self) {
                 var key = $self.attr('data-key');
@@ -1325,7 +1232,7 @@ var Finances = (function(){
 
             /**
              * OverviewHide
-             * @use show or hide the overview box on tap or click
+             * @desc show or hide the overview box on tap or click
              */
             overviewHide : function(el) {
                 if ($(el).hasClass('thrown')) {

@@ -3347,7 +3347,7 @@ module.exports.RotatingFileStream = RotatingFileStream;
 module.exports.safeCycles = safeCycles;
 
 }).call(this,{"isBuffer":require("/usr/local/lib/node_modules/watchify/node_modules/browserify/node_modules/insert-module-globals/node_modules/is-buffer/index.js")},require('_process'))
-},{"/usr/local/lib/node_modules/watchify/node_modules/browserify/node_modules/insert-module-globals/node_modules/is-buffer/index.js":33,"_process":35,"assert":30,"events":31,"fs":29,"os":34,"safe-json-stringify":3,"util":37}],3:[function(require,module,exports){
+},{"/usr/local/lib/node_modules/watchify/node_modules/browserify/node_modules/insert-module-globals/node_modules/is-buffer/index.js":35,"_process":37,"assert":32,"events":33,"fs":31,"os":36,"safe-json-stringify":3,"util":39}],3:[function(require,module,exports){
 var hasProp = Object.prototype.hasOwnProperty;
 
 function throwsMessage(err) {
@@ -18330,7 +18330,7 @@ return Q;
 });
 
 }).call(this,require('_process'))
-},{"_process":35}],9:[function(require,module,exports){
+},{"_process":37}],9:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -67200,11 +67200,11 @@ var Connect = {
 
 module.exports = Connect;
 
-},{"./server":27,"./vars":28,"backbone":1,"jquery":5}],25:[function(require,module,exports){
+},{"./server":28,"./vars":29,"backbone":1,"jquery":5}],25:[function(require,module,exports){
 /**
  * Finances.js
  * @author Khaliq Gant
- * @use main entry point into the app, this app manages state and makes calls
+ * @desc main entry point into the app, this app manages state and makes calls
  * @dependencies :
  *      Moment.js : https://github.com/moment/moment
  *      Backbone : http://backbonejs.org/
@@ -67238,8 +67238,11 @@ var enquire     = require('enquire.js');
 var bunyan      = require('bunyan');
 var TapListener = require('tap-listener');
 var Q           = require('q');
-var vis         = require('vis');
 var fx          = require('money');
+
+var VisualizationView = require('./views/visualization');
+
+var VisualizeModel = require('./models/visualize');
 
 var Finances = (function(){
     var debug = false;
@@ -67257,13 +67260,13 @@ var Finances = (function(){
         toPay : 0,
         investments : 0,
         sections : ['debt','cash', 'to_pay', 'notes', 'links'],
-        visualize: {},
+        visualize: VisualizeModel,
         balancesRetrieved: false,
     };
 
     /**
      * Financial View
-     * @use handles the render logic by grabbing corresponding JSON and
+     * @desc handles the render logic by grabbing corresponding JSON and
      *      nested json by iterating through the json keys and checking for a
      *      remote key
      */
@@ -67377,7 +67380,7 @@ var Finances = (function(){
 
         /**
          * Refresh
-         * @use restart the app with an reset then init call
+         * @desc restart the app with an reset then init call
          */
         refresh : function() {
             methods.reset(function(done){
@@ -67404,7 +67407,7 @@ var Finances = (function(){
         },
         /**
          * Render Data
-         * @use render data return from backbone model into the DOM
+         * @desc render data return from backbone model into the DOM
          * @param {object} data
          * @return void
          */
@@ -67493,7 +67496,7 @@ var Finances = (function(){
 
         /**
          * Append Nested
-         * @use append the nested values of key value pairs
+         * @desc append the nested values of key value pairs
          * @param {object} item
          * @param {object} value
          */
@@ -67559,7 +67562,7 @@ var Finances = (function(){
 
         /**
          * Template Builder
-         * @use formulate a template string based on some rules
+         * @desc formulate a template string based on some rules
          * @param {string} index
          * @param {boolean} nested
          * @return {string} template - underscore string function
@@ -67635,7 +67638,7 @@ var Finances = (function(){
 
         /**
          * Number Check
-         * @use check if a typeof string is actually a number
+         * @desc check if a typeof string is actually a number
          * @param {string} n
          * @ref http://stackoverflow.com/questions/16799469/how-to-check-if-a-string-is-a-natural-number
          */
@@ -67649,7 +67652,7 @@ var Finances = (function(){
 
         /**
          * Render Nested
-         * @use render the nested data of the object
+         * @desc render the nested data of the object
          * @param {object} els
          * @param {object} items
          * @return DOM manipulation
@@ -67710,7 +67713,7 @@ var Finances = (function(){
 
         /**
          * Add Note Pluses
-         * @use add in a plus sign to each note
+         * @desc add in a plus sign to each note
          */
         addNotePluses : function() {
             $(vars.notes + ' .circle').each(function(){
@@ -67720,7 +67723,7 @@ var Finances = (function(){
 
         /**
          * Get And Write Balances
-         * @use grab credit and debit balances using connect api
+         * @desc grab credit and debit balances using connect api
          */
         getAndWriteBalances: function() {
             // only make these API calls once
@@ -67793,7 +67796,7 @@ var Finances = (function(){
 
         /**
          * Re Sync Debt
-         * @use iterate through based on the model and update the DOM
+         * @desc iterate through based on the model and update the DOM
          */
         reSyncDebt: function(changedArray) {
             _.each(app.money.model.get('debt').credit_cards, function(cat,cards)
@@ -67826,7 +67829,7 @@ var Finances = (function(){
 
         /**
          * Compute Trends
-         * @use calculate trends and append to the trend box
+         * @desc calculate trends and append to the trend box
          *      and add information for visualization data
          */
         computeTrends : function() {
@@ -67839,11 +67842,9 @@ var Finances = (function(){
                     statsResponse.state === 'fulfilled')
                 {
                     // store this info for the visualizations
-                    Finances.app.visualize.all_cards =
-                        averageResponse.value.cards;
-                    Finances.app.visualize.all_dates =
-                        averageResponse.value.dates;
-                    Finances.app.visualize.stats = statsResponse.value;
+                    VisualizeModel.all_cards = averageResponse.value.cards;
+                    VisualizeModel.all_dates = averageResponse.value.dates;
+                    VisualizeModel.stats = statsResponse.value;
 
                     // add average to DOM
                     var average = averageResponse.value.average;
@@ -67857,91 +67858,6 @@ var Finances = (function(){
                         .addClass(diffClass);
                 }
             });
-        },
-
-        /**
-         * Create Visualizations
-         * @use leverage vis to display graph information for cc info
-         * @dependencies
-         *      2d: http://visjs.org/docs/graph2d/
-         *      custombox: http://dixso.github.io/custombox/
-         */
-        createVisualizations: function(el) {
-            Custombox.open({
-                target: '#visualize-overlay',
-                effect: 'push',
-                position: ['center', 'top'],
-                overlayOpacity: 1,
-                open: function() {
-                    var container = document.getElementById(
-                        vars.visualizations.show
-                    );
-                    var card_type = $(el).parents('.circle')
-                    .attr('data-name').toLowerCase();
-                    var card = $(el).parents('li').attr('data-key');
-                    var items = methods.createItems(card_type, card);
-                    var dataset = new vis.DataSet(items);
-
-                    var options = {
-                        orientation: 'top',
-                        autoResize: true
-                    };
-
-                    var graph2d = new vis.Graph2d(container, dataset, options);
-
-                    // add in stats and card header
-                    var cardType = card_type.ucfirst() + ' - ' + card.ucfirst()
-                                    .replace(/_/, ' ');
-                    $(vars.visualizations.card).text(cardType);
-
-                    // add in stats data
-                    var stats = Finances.app.visualize.stats;
-
-                    if (stats[card_type].hasOwnProperty(card)) {
-                        $(vars.visualizations.average).text(
-                            stats[card_type][card].avg
-                        );
-                        $(vars.visualizations.min).text(
-                            stats[card_type][card].min
-                        );
-                        $(vars.visualizations.max).text(
-                            stats[card_type][card].max
-                        );
-                    }
-                },
-                close: function() {
-                    $('#visualize-overlay').hide();
-                    $('#visualization').html('');
-                    $(document.body).scrollTop($('a[name="pay"]').offset().top);
-                },
-            });
-        },
-
-        /**
-         * Create Items
-         * @use return items array for visualization purposes
-         */
-        createItems: function(card_type, card) {
-            var items = [];
-            var all_cards = Finances.app.visualize.all_cards;
-            for(var i = 0; i < Finances.app.visualize.all_dates.length; i++)
-            {
-                if (all_cards[i][card_type].hasOwnProperty(card)) {
-                    items.push({
-                        x: Finances.app.visualize.all_dates[i]
-                            .replace(/_/, '-'),
-                        y: Finances.app.visualize.all_cards[i][card_type][card],
-                        label: {
-                            content: Finances.app.visualize.all_cards[i]
-                                        [card_type][card],
-                            className: 'visualize-text',
-                            xOffset: -40,
-                            yOffset: -15
-                        }
-                    });
-                }
-            }
-            return items;
         },
 
         updateOverview : function() {
@@ -67989,7 +67905,7 @@ var Finances = (function(){
 
             /**
              * Income
-             * @use given what is on the dom, make the calculation to find the
+             * @desc given what is on the dom, make the calculation to find the
              *      total income
              */
             income : function() {
@@ -68094,7 +68010,7 @@ var Finances = (function(){
 
             /**
              * Paid checkbox listener
-             * @use send off a post request when the paid checkbox is changed
+             * @desc send off a post request when the paid checkbox is changed
              */
             $(document).on('change', vars.paid, function(){
                 var checked = $(this).prop('checked');
@@ -68119,17 +68035,8 @@ var Finances = (function(){
             });
 
             /**
-             * Visualizations show listener
-             * @use show the associated card data view on click
-             */
-            $(document).on('click', vars.visualizations.listener, function(e) {
-                methods.createVisualizations(this);
-                e.preventDefault();
-            });
-
-            /**
              * Pencil click listener
-             * @use change value to a input box when a pencil is clicked
+             * @desc change value to a input box when a pencil is clicked
              */
             $(document).on('click', vars.pencil, function(){
                 var $li = $(this).parents('li');
@@ -68169,7 +68076,7 @@ var Finances = (function(){
 
             /**
              * Confirm input box || enter key in input
-             * @use change and send off post request and update
+             * @desc change and send off post request and update
              */
             $(document).on('click', vars.confirm, function(){
                 var $self = $(this).prev();
@@ -68281,7 +68188,7 @@ var Finances = (function(){
 
             /**
              * Refresh
-             * @use refresh the app by clicking the refresh button
+             * @desc refresh the app by clicking the refresh button
              */
             $(document).on('click', vars.refresh, function(e){
                 methods.refresh();
@@ -68289,7 +68196,7 @@ var Finances = (function(){
 
             /**
              * Remove
-             * @use action on trash can delete icon
+             * @desc action on trash can delete icon
              */
             $(document).on('click', vars.remove, function(e){
                 var content;
@@ -68412,7 +68319,7 @@ var Finances = (function(){
 
             /**
              * Add Note Handler
-             * @use logic to send post to add a note
+             * @desc logic to send post to add a note
              */
             addNoteHandler : function($self) {
                 var key = $self.attr('data-key');
@@ -68528,7 +68435,7 @@ var Finances = (function(){
 
             /**
              * OverviewHide
-             * @use show or hide the overview box on tap or click
+             * @desc show or hide the overview box on tap or click
              */
             overviewHide : function(el) {
                 if ($(el).hasClass('thrown')) {
@@ -68575,7 +68482,33 @@ $(document).ready(function() {
 });
 
 
-},{"./connect":24,"./open-exchange":26,"./server":27,"./vars":28,"backbone":1,"bunyan":2,"enquire.js":4,"jquery":5,"moment":6,"money":7,"q":8,"sweetalert":17,"tap-listener":21,"underscore":22,"vis":23}],26:[function(require,module,exports){
+},{"./connect":24,"./models/visualize":26,"./open-exchange":27,"./server":28,"./vars":29,"./views/visualization":30,"backbone":1,"bunyan":2,"enquire.js":4,"jquery":5,"moment":6,"money":7,"q":8,"sweetalert":17,"tap-listener":21,"underscore":22}],26:[function(require,module,exports){
+/**
+ * Visualize Model
+ */
+
+/* global $ */
+/* global jQuery */
+/* global _ */
+/* global window */
+/* global document */
+/* global _dev */
+
+
+var Backbone    = require('backbone');
+var Visualize = Backbone.Model.extend({
+
+    defaults: {
+        all_cards: [],
+        all_dates: [],
+        stats: {}
+    },
+
+});
+
+module.exports = new Visualize();
+
+},{"backbone":1}],27:[function(require,module,exports){
 /**
  * Open-exchange
  * @author Khaliq Gant
@@ -68595,7 +68528,7 @@ module.exports = Open;
 
 
 
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 /**
  * Server.js
  * @author Khaliq Gant
@@ -68869,7 +68802,7 @@ var Server = {
 
 module.exports = Server;
 
-},{"./vars":28,"backbone":1,"jquery":5,"moment":6,"q":8}],28:[function(require,module,exports){
+},{"./vars":29,"backbone":1,"jquery":5,"moment":6,"q":8}],29:[function(require,module,exports){
 /**
  * Vars.js
  * @author Khaliq Gant
@@ -68966,9 +68899,142 @@ var Vars = {
 module.exports = Vars;
 
 
-},{"moment":6}],29:[function(require,module,exports){
+},{"moment":6}],30:[function(require,module,exports){
+/**
+ * Visualization View
+ * @desc show the associated card data view on click
+ * @dependencies
+ *  2d: http://visjs.org/docs/graph2d/
+ *      custombox: http://dixso.github.io/custombox/
+ */
 
-},{}],30:[function(require,module,exports){
+/* global document */
+/* global Custombox */
+
+'use strict';
+
+var Backbone       = require('backbone');
+var $              = require('jquery');
+var vis            = require('vis');
+var vars           = require('../vars');
+var VisualizeModel = require('../models/visualize');
+
+var Visualization = Backbone.View.extend({
+
+    initialize: function () {
+
+        $(document).on(
+            'click', vars.visualizations.listener, this.create.bind(this)
+        );
+
+    },
+
+    el: vars.visualizations.listener,
+
+    /**
+     *
+     * Create
+     * @desc leverage vis to display graph information for cc info
+     *
+     */
+    create: function (e) {
+
+        e.preventDefault();
+
+        var el = vars.visualizations.listener;
+        var _this = this;
+
+        Custombox.open({
+            target: '#visualize-overlay',
+            effect: 'push',
+            position: ['center', 'top'],
+            overlayOpacity: 1,
+            open: function () {
+                var container = document.getElementById(
+                    vars.visualizations.show
+                );
+                var card_type = $(el).parents('.circle')
+                    .attr('data-name').toLowerCase();
+                var card = $(el).parents('li').attr('data-key');
+                var items = _this.graphCards(card_type, card);
+                var dataset = new vis.DataSet(items);
+
+                var options = {
+                    orientation: 'top',
+                    autoResize: true
+                };
+
+                var graph2d = new vis.Graph2d(container, dataset, options);
+
+                // add in stats and card header
+                var cardType = card_type.ucfirst() + ' - ' + card.ucfirst()
+                    .replace(/_/, ' ');
+                $(vars.visualizations.card).text(cardType);
+
+                // add in stats data
+                var stats = VisualizeModel.stats;
+
+                if (stats[card_type].hasOwnProperty(card)) {
+                    $(vars.visualizations.average).text(
+                        stats[card_type][card].avg
+                    );
+                    $(vars.visualizations.min).text(
+                        stats[card_type][card].min
+                    );
+                    $(vars.visualizations.max).text(
+                        stats[card_type][card].max
+                    );
+                }
+            },
+
+            close: function () {
+                $('#visualize-overlay').hide();
+                $('#visualization').html('');
+                $(document.body).scrollTop($('a[name="pay"]').offset().top);
+            },
+        });
+
+    },
+
+    /**
+     *
+     * Graph
+     * @desc make items for visualization purposes
+     * @return {array} items
+     *
+     */
+    graphCards: function (card_type, card) {
+
+        var cards = [];
+        var all_cards = VisualizeModel.all_cards;
+        for (var i = 0; i < VisualizeModel.all_dates.length; i++)
+        {
+            if (all_cards[i][card_type].hasOwnProperty(card)) {
+                cards.push({
+                    x: VisualizeModel.all_dates[i].replace(/_/, '-'),
+                    y: VisualizeModel.all_cards[i][card_type][card],
+                    label: {
+                        content: VisualizeModel.all_cards[i]
+                        [card_type][card],
+                        className: 'visualize-text',
+                        xOffset: -40,
+                        yOffset: -15
+                    }
+                });
+            }
+        }
+
+        return cards;
+
+    }
+});
+
+module.exports = new Visualization();
+
+
+},{"../models/visualize":26,"../vars":29,"backbone":1,"jquery":5,"vis":23}],31:[function(require,module,exports){
+
+},{}],32:[function(require,module,exports){
 // http://wiki.commonjs.org/wiki/Unit_Testing/1.0
 //
 // THIS IS NOT TESTED NOR LIKELY TO WORK OUTSIDE V8!
@@ -69329,7 +69395,7 @@ var objectKeys = Object.keys || function (obj) {
   return keys;
 };
 
-},{"util/":37}],31:[function(require,module,exports){
+},{"util/":39}],33:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -69632,7 +69698,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],32:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -69657,7 +69723,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],33:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 /**
  * Determine if an object is Buffer
  *
@@ -69676,7 +69742,7 @@ module.exports = function (obj) {
     ))
 }
 
-},{}],34:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 exports.endianness = function () { return 'LE' };
 
 exports.hostname = function () {
@@ -69723,7 +69789,7 @@ exports.tmpdir = exports.tmpDir = function () {
 
 exports.EOL = '\n';
 
-},{}],35:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -69816,14 +69882,14 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],36:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],37:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -70413,4 +70479,4 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":36,"_process":35,"inherits":32}]},{},[25]);
+},{"./support/isBuffer":38,"_process":37,"inherits":34}]},{},[25]);
