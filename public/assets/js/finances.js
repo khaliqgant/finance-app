@@ -38,6 +38,7 @@ var Q           = require('q');
 var fx          = require('money');
 
 var VisualizationView = require('./views/visualization');
+var PencilView = require('./views/pencil');
 
 var VisualizeModel = require('./models/visualize');
 
@@ -829,46 +830,6 @@ var Finances = (function(){
                         }
                     }
                 );
-            });
-
-            /**
-             * Pencil click listener
-             * @desc change value to a input box when a pencil is clicked
-             */
-            $(document).on('click', vars.pencil, function(){
-                var $li = $(this).parents('li');
-                var key = $li.attr('data-key');
-                var model = $(this).parents('.financial').attr('data-model');
-                var note = false;
-                if (!$li.find(vars.confirm).length) {
-                    var input = '<input name="'+model+'"' +
-                                'type="text" data-key="'+key+'"'+
-                                'class="text-input js-pay-input">'+
-                                ' <i class="fa fa-check-circle js-confirm">'+
-                                '</i>';
-                    // put before and hide that element
-                    if ($(this).parent('span').length) {
-                        $(this).parent('span').before(input);
-                    } else {
-                        // dealing with a note
-                        var previousText = $li.text();
-                        $li.html(input).append(vars.pencilHtml);
-                        $li.find(vars.payInput).attr(
-                            'data-value',previousText
-                        ).addClass('js-value');
-                        $li.find(vars.pencil).hide();
-                        note = true;
-                    }
-                } else {
-                    $(vars.payInput).css('display','inline-block');
-                    $(vars.confirm).show();
-                }
-                $li.find(vars.payInput).focus();
-                $li.find(vars.payInput).val('');
-                if (note) {
-                    $li.find(vars.payInput).val(previousText);
-                }
-                $(this).parent('span').hide();
             });
 
             /**

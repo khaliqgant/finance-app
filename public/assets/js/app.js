@@ -3347,7 +3347,7 @@ module.exports.RotatingFileStream = RotatingFileStream;
 module.exports.safeCycles = safeCycles;
 
 }).call(this,{"isBuffer":require("/usr/local/lib/node_modules/watchify/node_modules/browserify/node_modules/insert-module-globals/node_modules/is-buffer/index.js")},require('_process'))
-},{"/usr/local/lib/node_modules/watchify/node_modules/browserify/node_modules/insert-module-globals/node_modules/is-buffer/index.js":35,"_process":37,"assert":32,"events":33,"fs":31,"os":36,"safe-json-stringify":3,"util":39}],3:[function(require,module,exports){
+},{"/usr/local/lib/node_modules/watchify/node_modules/browserify/node_modules/insert-module-globals/node_modules/is-buffer/index.js":36,"_process":38,"assert":33,"events":34,"fs":32,"os":37,"safe-json-stringify":3,"util":40}],3:[function(require,module,exports){
 var hasProp = Object.prototype.hasOwnProperty;
 
 function throwsMessage(err) {
@@ -18330,7 +18330,7 @@ return Q;
 });
 
 }).call(this,require('_process'))
-},{"_process":37}],9:[function(require,module,exports){
+},{"_process":38}],9:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -67241,6 +67241,7 @@ var Q           = require('q');
 var fx          = require('money');
 
 var VisualizationView = require('./views/visualization');
+var PencilView = require('./views/pencil');
 
 var VisualizeModel = require('./models/visualize');
 
@@ -68035,46 +68036,6 @@ var Finances = (function(){
             });
 
             /**
-             * Pencil click listener
-             * @desc change value to a input box when a pencil is clicked
-             */
-            $(document).on('click', vars.pencil, function(){
-                var $li = $(this).parents('li');
-                var key = $li.attr('data-key');
-                var model = $(this).parents('.financial').attr('data-model');
-                var note = false;
-                if (!$li.find(vars.confirm).length) {
-                    var input = '<input name="'+model+'"' +
-                                'type="text" data-key="'+key+'"'+
-                                'class="text-input js-pay-input">'+
-                                ' <i class="fa fa-check-circle js-confirm">'+
-                                '</i>';
-                    // put before and hide that element
-                    if ($(this).parent('span').length) {
-                        $(this).parent('span').before(input);
-                    } else {
-                        // dealing with a note
-                        var previousText = $li.text();
-                        $li.html(input).append(vars.pencilHtml);
-                        $li.find(vars.payInput).attr(
-                            'data-value',previousText
-                        ).addClass('js-value');
-                        $li.find(vars.pencil).hide();
-                        note = true;
-                    }
-                } else {
-                    $(vars.payInput).css('display','inline-block');
-                    $(vars.confirm).show();
-                }
-                $li.find(vars.payInput).focus();
-                $li.find(vars.payInput).val('');
-                if (note) {
-                    $li.find(vars.payInput).val(previousText);
-                }
-                $(this).parent('span').hide();
-            });
-
-            /**
              * Confirm input box || enter key in input
              * @desc change and send off post request and update
              */
@@ -68482,7 +68443,7 @@ $(document).ready(function() {
 });
 
 
-},{"./connect":24,"./models/visualize":26,"./open-exchange":27,"./server":28,"./vars":29,"./views/visualization":30,"backbone":1,"bunyan":2,"enquire.js":4,"jquery":5,"moment":6,"money":7,"q":8,"sweetalert":17,"tap-listener":21,"underscore":22}],26:[function(require,module,exports){
+},{"./connect":24,"./models/visualize":26,"./open-exchange":27,"./server":28,"./vars":29,"./views/pencil":30,"./views/visualization":31,"backbone":1,"bunyan":2,"enquire.js":4,"jquery":5,"moment":6,"money":7,"q":8,"sweetalert":17,"tap-listener":21,"underscore":22}],26:[function(require,module,exports){
 /**
  * Visualize Model
  */
@@ -68901,6 +68862,80 @@ module.exports = Vars;
 
 },{"moment":6}],30:[function(require,module,exports){
 /**
+ * Pencil View
+ */
+
+/* global document */
+
+'use strict';
+
+var Backbone       = require('backbone');
+var $              = require('jquery');
+var vars           = require('../vars');
+
+var Pencil = Backbone.View.extend({
+
+    initialize: function () {
+
+        $(document).on('click', vars.pencil, this.swap);
+
+    },
+
+    /**
+     *
+     * Swap
+     * @desc change value to a input box when a pencil is clicked
+     *
+     */
+    swap: function (e) {
+
+        var $li = $(this).parents('li');
+        var key = $li.attr('data-key');
+        var model = $(this).parents('.financial').attr('data-model');
+        var note = false;
+
+        if (!$li.find(vars.confirm).length) {
+            var input = '<input name="' + model + '"' +
+                'type="text" data-key="' + key + '"' +
+                'class="text-input js-pay-input">' +
+                ' <i class="fa fa-check-circle js-confirm">' +
+                '</i>';
+
+            // put before and hide that element
+            if ($(this).parent('span').length) {
+                $(this).parent('span').before(input);
+            } else {
+                // dealing with a note
+                var previousText = $li.text();
+                $li.html(input).append(vars.pencilHtml);
+                $li.find(vars.payInput).attr(
+                    'data-value', previousText
+                ).addClass('js-value');
+                $li.find(vars.pencil).hide();
+                note = true;
+            }
+        } else {
+            $(vars.payInput).css('display', 'inline-block');
+            $(vars.confirm).show();
+        }
+
+        $li.find(vars.payInput).focus();
+        $li.find(vars.payInput).val('');
+
+        if (note) {
+            $li.find(vars.payInput).val(previousText);
+        }
+
+        $(this).parent('span').hide();
+
+    },
+
+});
+
+module.exports = new Pencil();
+
+},{"../vars":29,"backbone":1,"jquery":5}],31:[function(require,module,exports){
+/**
  * Visualization View
  * @desc show the associated card data view on click
  * @dependencies
@@ -69032,9 +69067,9 @@ var Visualization = Backbone.View.extend({
 module.exports = new Visualization();
 
 
-},{"../models/visualize":26,"../vars":29,"backbone":1,"jquery":5,"vis":23}],31:[function(require,module,exports){
+},{"../models/visualize":26,"../vars":29,"backbone":1,"jquery":5,"vis":23}],32:[function(require,module,exports){
 
-},{}],32:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 // http://wiki.commonjs.org/wiki/Unit_Testing/1.0
 //
 // THIS IS NOT TESTED NOR LIKELY TO WORK OUTSIDE V8!
@@ -69395,7 +69430,7 @@ var objectKeys = Object.keys || function (obj) {
   return keys;
 };
 
-},{"util/":39}],33:[function(require,module,exports){
+},{"util/":40}],34:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -69698,7 +69733,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],34:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -69723,7 +69758,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],35:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 /**
  * Determine if an object is Buffer
  *
@@ -69742,7 +69777,7 @@ module.exports = function (obj) {
     ))
 }
 
-},{}],36:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 exports.endianness = function () { return 'LE' };
 
 exports.hostname = function () {
@@ -69789,7 +69824,7 @@ exports.tmpdir = exports.tmpDir = function () {
 
 exports.EOL = '\n';
 
-},{}],37:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -69882,14 +69917,14 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],38:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],39:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -70479,4 +70514,4 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":38,"_process":37,"inherits":34}]},{},[25]);
+},{"./support/isBuffer":39,"_process":38,"inherits":35}]},{},[25]);
