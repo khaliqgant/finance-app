@@ -14,7 +14,6 @@ var moment = require('moment');
 
 var Vars = {
     isLocal : !!~location.href.indexOf('localhost'),
-    date : moment().format('YYYY_MM'),
     cash : '.js-cash',
     debt : '.js-debt',
     to_pay : '.js-to_pay',

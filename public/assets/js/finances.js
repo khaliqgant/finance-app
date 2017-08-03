@@ -37,9 +37,11 @@ var TapListener = require('tap-listener');
 var Q           = require('q');
 var fx          = require('money');
 
-var VisualizationView = require('./views/visualization');
+var DateView = require('./views/date');
 var PencilView = require('./views/pencil');
+var VisualizationView = require('./views/visualization');
 
+var DateModel = require('./models/date');
 var VisualizeModel = require('./models/visualize');
 
 var Finances = (function(){
@@ -47,7 +49,7 @@ var Finances = (function(){
     var log = bunyan.createLogger({name: 'Finances', level: 'debug'});
 
     var app = {
-        date : vars.date,
+        date: DateModel,
         mobile : false,
         current : null,
         money : null,
@@ -145,7 +147,7 @@ var Finances = (function(){
 
         init : function() {
             var Month = Backbone.Model.extend({
-                url : 'data/' + app.date + '.json',
+                url : 'data/' + DateModel.get('current') + '.json',
             });
 
             // grab the json by specifying the correct key
@@ -157,8 +159,8 @@ var Finances = (function(){
 
             app.money = Money;
 
-            server.nextMonthCheck(app.date);
-            server.previousMonthCheck(app.date);
+            server.nextMonthCheck(DateModel.get('current'));
+            server.previousMonthCheck(DateModel.get('current'));
         },
 
         reset : function(callback) {
@@ -309,8 +311,8 @@ var Finances = (function(){
 
             if (item.value.hasOwnProperty('next_month')) {
                 var month = item.value.next_month ?
-                    moment(app.date, 'YYYY_MM').month() + 2 :
-                    moment(app.date, 'YYYY_MM').format('M');
+                    moment(DateModel.get('current'), 'YYYY_MM').month() + 2 :
+                    moment(DateModel.get('current'), 'YYYY_MM').format('M');
                 if (month > 12) {
                     month = 1;
                 }
@@ -426,7 +428,7 @@ var Finances = (function(){
                 key : key,
                 value : value,
                 date : date,
-                currentDate : app.date
+                currentDate : DateModel.get('current')
             };
 
             return data;
@@ -613,7 +615,7 @@ var Finances = (function(){
                             value,
                             cards,
                             'credit_cards',
-                            app.date,
+                            DateModel.get('current'),
                             function(result) {
                                 if (result) {
                                     // file updated successfully
@@ -823,7 +825,7 @@ var Finances = (function(){
                     checked,
                     data.parent,
                     undefined,
-                    app.date,
+                    DateModel.get('current'),
                     function(result) {
                         if (result) {
                             methods.updateOverview();
@@ -893,12 +895,13 @@ var Finances = (function(){
             $(document).on('click', vars.increaseMonth, function(e){
                 e.preventDefault();
                 vars.monthCount++;
-                var last = app.date;
+                var last = DateModel.get('current');
                 var month = moment()
                         .add(vars.monthCount,'months').format('MMMM');
                 methods.updateMonth(month);
-                app.date = moment()
+                var nextDate = moment()
                         .add(vars.monthCount,'months').format('YYYY_MM');
+                DateModel.set('current', nextDate);
 
                 // make a new file
                 if ($(this).hasClass('inactive')){
@@ -926,8 +929,9 @@ var Finances = (function(){
                 var month = moment()
                         .add(vars.monthCount,'months').format('MMMM');
                 methods.updateMonth(month);
-                app.date = moment()
+                var previousDate = moment()
                         .add(vars.monthCount,'months').format('YYYY_MM');
+                DateModel.set('current', previousDate);
                 // re-initialize the app
                 methods.reset(function(done){
                     methods.init();
@@ -938,7 +942,7 @@ var Finances = (function(){
                 e.preventDefault();
                 vars.monthCount = 0;
                 methods.updateMonth();
-                app.date = moment().format('YYYY_MM');
+                DateModel.reset();
                 methods.reset(function(done){
                     methods.init();
                 });
@@ -1151,7 +1155,7 @@ var Finances = (function(){
                         value,
                         data.parent,
                         object,
-                        app.date,
+                        DateModel.get('current'),
                         function(result) {
                             if (result) {
                                 $(vars.payInput).hide();

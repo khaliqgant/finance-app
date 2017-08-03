@@ -3347,7 +3347,7 @@ module.exports.RotatingFileStream = RotatingFileStream;
 module.exports.safeCycles = safeCycles;
 
 }).call(this,{"isBuffer":require("/usr/local/lib/node_modules/watchify/node_modules/browserify/node_modules/insert-module-globals/node_modules/is-buffer/index.js")},require('_process'))
-},{"/usr/local/lib/node_modules/watchify/node_modules/browserify/node_modules/insert-module-globals/node_modules/is-buffer/index.js":36,"_process":38,"assert":33,"events":34,"fs":32,"os":37,"safe-json-stringify":3,"util":40}],3:[function(require,module,exports){
+},{"/usr/local/lib/node_modules/watchify/node_modules/browserify/node_modules/insert-module-globals/node_modules/is-buffer/index.js":38,"_process":40,"assert":35,"events":36,"fs":34,"os":39,"safe-json-stringify":3,"util":42}],3:[function(require,module,exports){
 var hasProp = Object.prototype.hasOwnProperty;
 
 function throwsMessage(err) {
@@ -18330,7 +18330,7 @@ return Q;
 });
 
 }).call(this,require('_process'))
-},{"_process":38}],9:[function(require,module,exports){
+},{"_process":40}],9:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -67200,7 +67200,7 @@ var Connect = {
 
 module.exports = Connect;
 
-},{"./server":28,"./vars":29,"backbone":1,"jquery":5}],25:[function(require,module,exports){
+},{"./server":29,"./vars":30,"backbone":1,"jquery":5}],25:[function(require,module,exports){
 /**
  * Finances.js
  * @author Khaliq Gant
@@ -67240,9 +67240,11 @@ var TapListener = require('tap-listener');
 var Q           = require('q');
 var fx          = require('money');
 
-var VisualizationView = require('./views/visualization');
+var DateView = require('./views/date');
 var PencilView = require('./views/pencil');
+var VisualizationView = require('./views/visualization');
 
+var DateModel = require('./models/date');
 var VisualizeModel = require('./models/visualize');
 
 var Finances = (function(){
@@ -67250,7 +67252,7 @@ var Finances = (function(){
     var log = bunyan.createLogger({name: 'Finances', level: 'debug'});
 
     var app = {
-        date : vars.date,
+        date: DateModel,
         mobile : false,
         current : null,
         money : null,
@@ -67348,7 +67350,7 @@ var Finances = (function(){
 
         init : function() {
             var Month = Backbone.Model.extend({
-                url : 'data/' + app.date + '.json',
+                url : 'data/' + DateModel.get('current') + '.json',
             });
 
             // grab the json by specifying the correct key
@@ -67360,8 +67362,8 @@ var Finances = (function(){
 
             app.money = Money;
 
-            server.nextMonthCheck(app.date);
-            server.previousMonthCheck(app.date);
+            server.nextMonthCheck(DateModel.get('current'));
+            server.previousMonthCheck(DateModel.get('current'));
         },
 
         reset : function(callback) {
@@ -67512,8 +67514,8 @@ var Finances = (function(){
 
             if (item.value.hasOwnProperty('next_month')) {
                 var month = item.value.next_month ?
-                    moment(app.date, 'YYYY_MM').month() + 2 :
-                    moment(app.date, 'YYYY_MM').format('M');
+                    moment(DateModel.get('current'), 'YYYY_MM').month() + 2 :
+                    moment(DateModel.get('current'), 'YYYY_MM').format('M');
                 if (month > 12) {
                     month = 1;
                 }
@@ -67629,7 +67631,7 @@ var Finances = (function(){
                 key : key,
                 value : value,
                 date : date,
-                currentDate : app.date
+                currentDate : DateModel.get('current')
             };
 
             return data;
@@ -67816,7 +67818,7 @@ var Finances = (function(){
                             value,
                             cards,
                             'credit_cards',
-                            app.date,
+                            DateModel.get('current'),
                             function(result) {
                                 if (result) {
                                     // file updated successfully
@@ -68026,7 +68028,7 @@ var Finances = (function(){
                     checked,
                     data.parent,
                     undefined,
-                    app.date,
+                    DateModel.get('current'),
                     function(result) {
                         if (result) {
                             methods.updateOverview();
@@ -68096,12 +68098,13 @@ var Finances = (function(){
             $(document).on('click', vars.increaseMonth, function(e){
                 e.preventDefault();
                 vars.monthCount++;
-                var last = app.date;
+                var last = DateModel.get('current');
                 var month = moment()
                         .add(vars.monthCount,'months').format('MMMM');
                 methods.updateMonth(month);
-                app.date = moment()
+                var nextDate = moment()
                         .add(vars.monthCount,'months').format('YYYY_MM');
+                DateModel.set('current', nextDate);
 
                 // make a new file
                 if ($(this).hasClass('inactive')){
@@ -68129,8 +68132,9 @@ var Finances = (function(){
                 var month = moment()
                         .add(vars.monthCount,'months').format('MMMM');
                 methods.updateMonth(month);
-                app.date = moment()
+                var previousDate = moment()
                         .add(vars.monthCount,'months').format('YYYY_MM');
+                DateModel.set('current', previousDate);
                 // re-initialize the app
                 methods.reset(function(done){
                     methods.init();
@@ -68141,7 +68145,7 @@ var Finances = (function(){
                 e.preventDefault();
                 vars.monthCount = 0;
                 methods.updateMonth();
-                app.date = moment().format('YYYY_MM');
+                DateModel.reset();
                 methods.reset(function(done){
                     methods.init();
                 });
@@ -68354,7 +68358,7 @@ var Finances = (function(){
                         value,
                         data.parent,
                         object,
-                        app.date,
+                        DateModel.get('current'),
                         function(result) {
                             if (result) {
                                 $(vars.payInput).hide();
@@ -68443,7 +68447,40 @@ $(document).ready(function() {
 });
 
 
-},{"./connect":24,"./models/visualize":26,"./open-exchange":27,"./server":28,"./vars":29,"./views/pencil":30,"./views/visualization":31,"backbone":1,"bunyan":2,"enquire.js":4,"jquery":5,"moment":6,"money":7,"q":8,"sweetalert":17,"tap-listener":21,"underscore":22}],26:[function(require,module,exports){
+},{"./connect":24,"./models/date":26,"./models/visualize":27,"./open-exchange":28,"./server":29,"./vars":30,"./views/date":31,"./views/pencil":32,"./views/visualization":33,"backbone":1,"bunyan":2,"enquire.js":4,"jquery":5,"moment":6,"money":7,"q":8,"sweetalert":17,"tap-listener":21,"underscore":22}],26:[function(require,module,exports){
+/**
+ * Date Model
+ */
+
+'use strict';
+
+var Backbone    = require('backbone');
+var moment      = require('moment');
+
+var DateModel = Backbone.Model.extend({
+
+    defaults: {
+        current: 0,
+        monthCount: 0,
+    },
+
+    initialize: function () {
+
+        this.set('current', moment().format('YYYY_MM'));
+
+    },
+
+    reset: function () {
+
+        this.initialize();
+
+    }
+
+});
+
+module.exports = new DateModel();
+
+},{"backbone":1,"moment":6}],27:[function(require,module,exports){
 /**
  * Visualize Model
  */
@@ -68469,7 +68506,7 @@ var Visualize = Backbone.Model.extend({
 
 module.exports = new Visualize();
 
-},{"backbone":1}],27:[function(require,module,exports){
+},{"backbone":1}],28:[function(require,module,exports){
 /**
  * Open-exchange
  * @author Khaliq Gant
@@ -68489,7 +68526,7 @@ module.exports = Open;
 
 
 
-},{}],28:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 /**
  * Server.js
  * @author Khaliq Gant
@@ -68763,7 +68800,7 @@ var Server = {
 
 module.exports = Server;
 
-},{"./vars":29,"backbone":1,"jquery":5,"moment":6,"q":8}],29:[function(require,module,exports){
+},{"./vars":30,"backbone":1,"jquery":5,"moment":6,"q":8}],30:[function(require,module,exports){
 /**
  * Vars.js
  * @author Khaliq Gant
@@ -68780,7 +68817,6 @@ var moment = require('moment');
 
 var Vars = {
     isLocal : !!~location.href.indexOf('localhost'),
-    date : moment().format('YYYY_MM'),
     cash : '.js-cash',
     debt : '.js-debt',
     to_pay : '.js-to_pay',
@@ -68860,7 +68896,42 @@ var Vars = {
 module.exports = Vars;
 
 
-},{"moment":6}],30:[function(require,module,exports){
+},{"moment":6}],31:[function(require,module,exports){
+/**
+ * Month View
+ * @desc interact with the month model and handle increase/decrease actions
+ */
+
+/* global document */
+
+'use strict';
+
+var Backbone       = require('backbone');
+var $              = require('jquery');
+var vars           = require('../vars');
+
+var DateView = Backbone.View.extend({
+
+    initialize: function () {
+
+        //$(document).on('click', vars.pencil, this.swap);
+
+    },
+
+    /**
+     *
+     * Swap
+     * @desc change value to a input box when a pencil is clicked
+     *
+     */
+    swap: function (e) {
+    },
+
+});
+
+module.exports = new DateView();
+
+},{"../vars":30,"backbone":1,"jquery":5}],32:[function(require,module,exports){
 /**
  * Pencil View
  */
@@ -68934,7 +69005,7 @@ var Pencil = Backbone.View.extend({
 
 module.exports = new Pencil();
 
-},{"../vars":29,"backbone":1,"jquery":5}],31:[function(require,module,exports){
+},{"../vars":30,"backbone":1,"jquery":5}],33:[function(require,module,exports){
 /**
  * Visualization View
  * @desc show the associated card data view on click
@@ -69067,9 +69138,9 @@ var Visualization = Backbone.View.extend({
 module.exports = new Visualization();
 
 
-},{"../models/visualize":26,"../vars":29,"backbone":1,"jquery":5,"vis":23}],32:[function(require,module,exports){
+},{"../models/visualize":27,"../vars":30,"backbone":1,"jquery":5,"vis":23}],34:[function(require,module,exports){
 
-},{}],33:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 // http://wiki.commonjs.org/wiki/Unit_Testing/1.0
 //
 // THIS IS NOT TESTED NOR LIKELY TO WORK OUTSIDE V8!
@@ -69430,7 +69501,7 @@ var objectKeys = Object.keys || function (obj) {
   return keys;
 };
 
-},{"util/":40}],34:[function(require,module,exports){
+},{"util/":42}],36:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -69733,7 +69804,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],35:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -69758,7 +69829,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],36:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 /**
  * Determine if an object is Buffer
  *
@@ -69777,7 +69848,7 @@ module.exports = function (obj) {
     ))
 }
 
-},{}],37:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 exports.endianness = function () { return 'LE' };
 
 exports.hostname = function () {
@@ -69824,7 +69895,7 @@ exports.tmpdir = exports.tmpDir = function () {
 
 exports.EOL = '\n';
 
-},{}],38:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -69917,14 +69988,14 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],39:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],40:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -70514,4 +70585,4 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":39,"_process":38,"inherits":35}]},{},[25]);
+},{"./support/isBuffer":41,"_process":40,"inherits":37}]},{},[25]);
