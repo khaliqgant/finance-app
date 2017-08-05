@@ -3347,7 +3347,7 @@ module.exports.RotatingFileStream = RotatingFileStream;
 module.exports.safeCycles = safeCycles;
 
 }).call(this,{"isBuffer":require("/usr/local/lib/node_modules/watchify/node_modules/browserify/node_modules/insert-module-globals/node_modules/is-buffer/index.js")},require('_process'))
-},{"/usr/local/lib/node_modules/watchify/node_modules/browserify/node_modules/insert-module-globals/node_modules/is-buffer/index.js":38,"_process":40,"assert":35,"events":36,"fs":34,"os":39,"safe-json-stringify":3,"util":42}],3:[function(require,module,exports){
+},{"/usr/local/lib/node_modules/watchify/node_modules/browserify/node_modules/insert-module-globals/node_modules/is-buffer/index.js":39,"_process":41,"assert":36,"events":37,"fs":35,"os":40,"safe-json-stringify":3,"util":43}],3:[function(require,module,exports){
 var hasProp = Object.prototype.hasOwnProperty;
 
 function throwsMessage(err) {
@@ -18330,7 +18330,7 @@ return Q;
 });
 
 }).call(this,require('_process'))
-},{"_process":40}],9:[function(require,module,exports){
+},{"_process":41}],9:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -67200,7 +67200,7 @@ var Connect = {
 
 module.exports = Connect;
 
-},{"./server":29,"./vars":30,"backbone":1,"jquery":5}],25:[function(require,module,exports){
+},{"./server":30,"./vars":31,"backbone":1,"jquery":5}],25:[function(require,module,exports){
 /**
  * Finances.js
  * @author Khaliq Gant
@@ -67246,6 +67246,7 @@ var VisualizationView = require('./views/visualization');
 
 var DateModel = require('./models/date');
 var VisualizeModel = require('./models/visualize');
+var LayoutModel = require('./models/layout');
 
 var Finances = (function(){
     var debug = false;
@@ -67262,7 +67263,7 @@ var Finances = (function(){
         debt : 0,
         toPay : 0,
         investments : 0,
-        sections : ['debt','cash', 'to_pay', 'notes', 'links'],
+        sections : LayoutModel.toJSON().sections,
         visualize: VisualizeModel,
         balancesRetrieved: false,
     };
@@ -67392,6 +67393,10 @@ var Finances = (function(){
         },
 
         renderHandler : function(val) {
+            if (!app.current[val]) {
+                return;
+            }
+
             if (app.current[val].hasOwnProperty('remote') &&
                 app.current[val].remote)
             {
@@ -68447,7 +68452,7 @@ $(document).ready(function() {
 });
 
 
-},{"./connect":24,"./models/date":26,"./models/visualize":27,"./open-exchange":28,"./server":29,"./vars":30,"./views/date":31,"./views/pencil":32,"./views/visualization":33,"backbone":1,"bunyan":2,"enquire.js":4,"jquery":5,"moment":6,"money":7,"q":8,"sweetalert":17,"tap-listener":21,"underscore":22}],26:[function(require,module,exports){
+},{"./connect":24,"./models/date":26,"./models/layout":27,"./models/visualize":28,"./open-exchange":29,"./server":30,"./vars":31,"./views/date":32,"./views/pencil":33,"./views/visualization":34,"backbone":1,"bunyan":2,"enquire.js":4,"jquery":5,"moment":6,"money":7,"q":8,"sweetalert":17,"tap-listener":21,"underscore":22}],26:[function(require,module,exports){
 /**
  * Date Model
  */
@@ -68482,6 +68487,29 @@ module.exports = new DateModel();
 
 },{"backbone":1,"moment":6}],27:[function(require,module,exports){
 /**
+ * Layout Model
+ */
+
+var Backbone    = require('backbone');
+var Layout = Backbone.Model.extend({
+
+    defaults: {
+        sections: [
+            'debt',
+            'taxes',
+            'cash',
+            'to_pay',
+            'notes',
+            'links'
+        ]
+    },
+
+});
+
+module.exports = new Layout();
+
+},{"backbone":1}],28:[function(require,module,exports){
+/**
  * Visualize Model
  */
 
@@ -68506,7 +68534,7 @@ var Visualize = Backbone.Model.extend({
 
 module.exports = new Visualize();
 
-},{"backbone":1}],28:[function(require,module,exports){
+},{"backbone":1}],29:[function(require,module,exports){
 /**
  * Open-exchange
  * @author Khaliq Gant
@@ -68526,7 +68554,7 @@ module.exports = Open;
 
 
 
-},{}],29:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 /**
  * Server.js
  * @author Khaliq Gant
@@ -68800,7 +68828,7 @@ var Server = {
 
 module.exports = Server;
 
-},{"./vars":30,"backbone":1,"jquery":5,"moment":6,"q":8}],30:[function(require,module,exports){
+},{"./vars":31,"backbone":1,"jquery":5,"moment":6,"q":8}],31:[function(require,module,exports){
 /**
  * Vars.js
  * @author Khaliq Gant
@@ -68896,7 +68924,7 @@ var Vars = {
 module.exports = Vars;
 
 
-},{"moment":6}],31:[function(require,module,exports){
+},{"moment":6}],32:[function(require,module,exports){
 /**
  * Month View
  * @desc interact with the month model and handle increase/decrease actions
@@ -68931,7 +68959,7 @@ var DateView = Backbone.View.extend({
 
 module.exports = new DateView();
 
-},{"../vars":30,"backbone":1,"jquery":5}],32:[function(require,module,exports){
+},{"../vars":31,"backbone":1,"jquery":5}],33:[function(require,module,exports){
 /**
  * Pencil View
  */
@@ -69005,7 +69033,7 @@ var Pencil = Backbone.View.extend({
 
 module.exports = new Pencil();
 
-},{"../vars":30,"backbone":1,"jquery":5}],33:[function(require,module,exports){
+},{"../vars":31,"backbone":1,"jquery":5}],34:[function(require,module,exports){
 /**
  * Visualization View
  * @desc show the associated card data view on click
@@ -69138,9 +69166,9 @@ var Visualization = Backbone.View.extend({
 module.exports = new Visualization();
 
 
-},{"../models/visualize":27,"../vars":30,"backbone":1,"jquery":5,"vis":23}],34:[function(require,module,exports){
+},{"../models/visualize":28,"../vars":31,"backbone":1,"jquery":5,"vis":23}],35:[function(require,module,exports){
 
-},{}],35:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 // http://wiki.commonjs.org/wiki/Unit_Testing/1.0
 //
 // THIS IS NOT TESTED NOR LIKELY TO WORK OUTSIDE V8!
@@ -69501,7 +69529,7 @@ var objectKeys = Object.keys || function (obj) {
   return keys;
 };
 
-},{"util/":42}],36:[function(require,module,exports){
+},{"util/":43}],37:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -69804,7 +69832,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],37:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -69829,7 +69857,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],38:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 /**
  * Determine if an object is Buffer
  *
@@ -69848,7 +69876,7 @@ module.exports = function (obj) {
     ))
 }
 
-},{}],39:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 exports.endianness = function () { return 'LE' };
 
 exports.hostname = function () {
@@ -69895,7 +69923,7 @@ exports.tmpdir = exports.tmpDir = function () {
 
 exports.EOL = '\n';
 
-},{}],40:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -69988,14 +70016,14 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],41:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],42:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -70585,4 +70613,4 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":41,"_process":40,"inherits":37}]},{},[25]);
+},{"./support/isBuffer":42,"_process":41,"inherits":38}]},{},[25]);

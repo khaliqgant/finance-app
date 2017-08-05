@@ -43,6 +43,7 @@ var VisualizationView = require('./views/visualization');
 
 var DateModel = require('./models/date');
 var VisualizeModel = require('./models/visualize');
+var LayoutModel = require('./models/layout');
 
 var Finances = (function(){
     var debug = false;
@@ -59,7 +60,7 @@ var Finances = (function(){
         debt : 0,
         toPay : 0,
         investments : 0,
-        sections : ['debt','cash', 'to_pay', 'notes', 'links'],
+        sections : LayoutModel.toJSON().sections,
         visualize: VisualizeModel,
         balancesRetrieved: false,
     };
@@ -189,6 +190,10 @@ var Finances = (function(){
         },
 
         renderHandler : function(val) {
+            if (!app.current[val]) {
+                return;
+            }
+
             if (app.current[val].hasOwnProperty('remote') &&
                 app.current[val].remote)
             {
