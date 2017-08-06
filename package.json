@@ -30,6 +30,7 @@
     "serve-favicon": "~2.2.0",
     "sweetalert": "^1.0.1",
     "tap-listener": "^1.1.1",
+    "tippy.js": "^1.2.0",
     "underscore": "^1.8.3",
     "vis": "^4.12.0"
   }

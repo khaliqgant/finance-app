@@ -41,6 +41,8 @@ var DateView = require('./views/date');
 var PencilView = require('./views/pencil');
 var VisualizationView = require('./views/visualization');
 var IncomeView = require('./views/income');
+var InfoView = require('./views/info');
+var InputView = require('./views/input');
 
 var OverviewModel = require('./models/overview');
 var DateModel = require('./models/date');
@@ -108,6 +110,7 @@ var Finances = (function(){
                     methods.addNotePluses();
                     methods.computeTrends();
                     methods.getAndWriteBalances();
+                    new InfoView();
                 }
             });
 
@@ -160,7 +163,8 @@ var Finances = (function(){
             });
             app.financials++;
 
-            app.money = Money;
+            app.money = Money.model.attributes;
+            OverviewModel.set('sectionModels', Money);
 
             server.nextMonthCheck(DateModel.get('current'));
             server.previousMonthCheck(DateModel.get('current'));
@@ -236,11 +240,17 @@ var Finances = (function(){
                         );
                     } else {
                         var nested = false;
+                        var hasInfo = false;
                         var items = _.map(
                             // need to adjust logic to obtain credit cards here
                             _.pairs(data), function(pair) {
                                 var key = pair[0].ucfirst();
                                 var keyClass = '.' + pair[0];
+
+                                // we append the info as a tooltip
+                                if (pair[1].hasOwnProperty('info')) {
+                                    hasInfo = true;
+                                }
 
                                 if (typeof(pair[1]) === 'object') {
                                     nested = true;
@@ -260,7 +270,7 @@ var Finances = (function(){
 
                         if (index !== 'file' && index !== 'remote') {
                             var template = methods.templateBuilder(
-                                index,nested
+                                index, nested, hasInfo
                             );
 
                             var appendEl = vars[val];
@@ -374,9 +384,45 @@ var Finances = (function(){
          * @param {boolean} nested
          * @return {string} template - underscore string function
          */
-        templateBuilder : function(index,nested) {
+        templateBuilder : function(index, nested, hasInfo) {
             var template = null;
-            if (nested) {
+            var openTag, closeTag;
+            if (hasInfo) {
+                openTag = '<ul class="circle" data-name="'+index+'">' +
+                    '<span class="section js-'+index+'">' +
+                        index.ucfirst().strip() +
+                    '</span>';
+                closeTag = '</ul>';
+                template = _.template(
+                     openTag +
+                        '<% _(list).each(function(field) { %>'+
+                            '<li class="<%= field.keyName %>" '+
+                                'data-key=<%= field.keyName %>>'+
+                                '<% if (field.key !== "") { %>' +
+                                    '<%= field.key %> : '+
+                                    '<span class="numerical js-value"'+
+                                    ' data-has-info="<%= field.value.info %>"' +
+                                    ' data-value="<%= field.value.value || field.value %>">$' +
+                                    '<% } %>'+
+                                '<%= field.value.value || field.value %>'+
+                                    vars.pencilHtml +
+                                '<% if (field.key === "") { %>' +
+                                    '<i class="fa fa-trash-o js-remove"></i>'+
+                                '<% } %>'+
+                                '<% if (field.key !== "") { %>' +
+                                    '</span>'+
+                                '<% } %>'+
+                                '<% if (field.value.value) { %>' +
+                                    ' <i class="fa fa-info-circle js-info"' +
+                                        'title="<%= field.value.info %>"' +
+                                    '>' +
+                                    '</i>' +
+                                '<% } %>' +
+                            '</li>'+
+                        '<% }); %>' +
+                    closeTag
+                );
+            } else if (nested) {
                 template = _.template(
                     '<% _(list).each(function(field) { %>'+
                         '<ul class="circle" data-name="<%= field.key %>">'+
@@ -384,11 +430,11 @@ var Finances = (function(){
                     '<% }); %>'
                 );
             } else {
-                var openTag = '<ul class="circle" data-name="'+index+'">' +
+                openTag = '<ul class="circle" data-name="'+index+'">' +
                                     '<span class="section js-'+index+'">' +
                                         index.ucfirst().strip() +
                                     '</span>';
-                var closeTag = '</ul>';
+                closeTag = '</ul>';
                 template = _.template(
                      openTag +
                         '<% _(list).each(function(field) { %>'+
@@ -540,20 +586,20 @@ var Finances = (function(){
                 var changedArray = [];
                 connect.get('bofa').then(function(balance) {
                     if (balance !== null) {
-                        if (+app.money.model.get('debt')
+                        if (+OverviewModel.get('sectionModels').model.get('debt')
                                 .credit_cards.visa.bofa_cash !== balance.cash)
                         {
-                            app.money.model.get('debt')
+                            OverviewModel.get('sectionModels').model.get('debt')
                                 .credit_cards.visa.bofa_cash = balance.cash;
                             changed = true;
                             changedArray.push('bofa_cash');
                         }
 
                         if (balance.travel !== null &&
-                            +app.money.model.get('debt')
+                            +OverviewModel.get('sectionModels').model.get('debt')
                                 .credit_cards.visa.bofa_travel !== balance.travel)
                         {
-                            app.money.model.get('debt')
+                            OverviewModel.get('sectionModels').model.get('debt')
                                 .credit_cards.visa.bofa_travel = balance.travel;
                             changed = true;
                             changedArray.push('bofa_travel');
@@ -607,7 +653,7 @@ var Finances = (function(){
          * @desc iterate through based on the model and update the DOM
          */
         reSyncDebt: function(changedArray) {
-            _.each(app.money.model.get('debt').credit_cards, function(cat,cards)
+            _.each(OverviewModel.get('sectionModels').model.get('debt').credit_cards, function(cat,cards)
             {
                 _.each(cat, function(value, card) {
                     if (changedArray.indexOf(card) !== -1) {
@@ -781,7 +827,7 @@ var Finances = (function(){
             $(document).on('change', vars.paid, function(){
                 var checked = $(this).prop('checked');
                 // get the model file that corresponds to paid
-                var model = app.money.model.get('debt').due_dates;
+                var model = OverviewModel.get('sectionModels').model.get('debt').due_dates;
                 var data = listeners.methods.mapInputData($(this));
 
                 var result = server.postIt(
@@ -1036,8 +1082,8 @@ var Finances = (function(){
             mapNoteData : function($self) {
                 var noteData = {};
                 noteData.model = $self.parents('.financial').attr('data-model');
-                if (app.money.model.get(noteData.model).remote) {
-                    noteData.model = app.money.model.get(noteData.model);
+                if (OverviewModel.get('sectionModels').model.get(noteData.model).remote) {
+                    noteData.model = OverviewModel.get('sectionModels').model.get(noteData.model);
                 }
                 noteData.name = $self.parents('.circle').attr('data-name');
                 noteData.keyName = $self.parent('li').attr('data-key');
@@ -1053,7 +1099,7 @@ var Finances = (function(){
                 var key = $self.attr('data-key');
                 var value = $self.val();
                 var model = $self.attr('data-model');
-                var file = app.money.model.get(model).file;
+                var file = OverviewModel.get('sectionModels').model.get(model).file;
 
                 if (value !== '') {
                     server.note.add(
@@ -1078,7 +1124,7 @@ var Finances = (function(){
              */
             addNoteCatHandler: function($el) {
                 var data = {
-                    file: app.money.model.get('notes').file,
+                    file: OverviewModel.get('sectionModels').model.get('notes').file,
                     category: $el.val()
                 };
                 var endpoint = 'addNoteCategory';
@@ -1094,6 +1140,7 @@ var Finances = (function(){
 
             inputHandler : function($self) {
                 var key = $self.attr('data-key');
+                var info = $self.attr('data-info');
                 var value = $self.val();
                 var model, result;
                 // remove dollar sign if there
@@ -1106,13 +1153,21 @@ var Finances = (function(){
                 if (!isNaN(value)) {
                     var object;
                     model = $self.parents('.financial').attr('data-model');
-                    if (app.money.model.get(model).remote) {
-                        model = app.money.model.get(model);
+                    if (OverviewModel.get('sectionModels').model.get(model).remote) {
+                        model = OverviewModel.get('sectionModels').model.get(model);
                         object = false;
                     }
                     var data = listeners.methods.mapInputData($self);
                     object = typeof(object) !== 'undefined' ?
                         false : $self.parents('.financial').attr('data-object');
+
+                    // if there is info associated build that out
+                    if (info) {
+                        value = {
+                            value: value,
+                            info: info
+                        };
+                    }
 
                     server.postIt(
                         model,
@@ -1127,8 +1182,8 @@ var Finances = (function(){
                                 $(vars.payInput).hide();
                                 $(vars.confirm).hide();
                                 $self.parent('li').find('.numerical')
-                                    .attr('data-value',value).html(
-                                        '$'+value + vars.pencilHtml)
+                                    .attr('data-value', value.value || value).html(
+                                        '$'+ (value.value || value) + vars.pencilHtml)
                                     .css('display','inline-block');
                                 // update the calculations
                                 methods.calculations.income();

@@ -10,6 +10,7 @@ var Overview = Backbone.Model.extend({
         debt: 0,
         toPay: 0,
         investments: 0,
+        sectionModels: null,
     },
 
 });

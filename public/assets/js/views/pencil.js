@@ -28,12 +28,14 @@ var Pencil = Backbone.View.extend({
 
         var $li = $(this).parents('li');
         var key = $li.attr('data-key');
+        var info = $(this).parent('span').attr('data-has-info');
         var model = $(this).parents('.financial').attr('data-model');
         var note = false;
 
         if (!$li.find(vars.confirm).length) {
             var input = '<input name="' + model + '"' +
                 'type="text" data-key="' + key + '"' +
+                'data-info="' + info + '"' +
                 'class="text-input js-pay-input">' +
                 ' <i class="fa fa-check-circle js-confirm">' +
                 '</i>';
