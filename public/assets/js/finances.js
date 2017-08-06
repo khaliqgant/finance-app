@@ -40,7 +40,9 @@ var fx          = require('money');
 var DateView = require('./views/date');
 var PencilView = require('./views/pencil');
 var VisualizationView = require('./views/visualization');
+var IncomeView = require('./views/income');
 
+var OverviewModel = require('./models/overview');
 var DateModel = require('./models/date');
 var VisualizeModel = require('./models/visualize');
 var LayoutModel = require('./models/layout');
@@ -667,7 +669,7 @@ var Finances = (function(){
 
         updateOverview : function() {
             // find the diff
-            var difference = app.income - app.toPay;
+            var difference = OverviewModel.get('income') - app.toPay;
             $(vars.overview.short).text('$'+difference.toFixed(2));
             if (difference < 0) {
                 $(vars.overview.short).removeClass('plus');
@@ -714,50 +716,8 @@ var Finances = (function(){
              *      total income
              */
             income : function() {
-                // get total
-                var gross = $('.income .gross .numerical').attr('data-value');
-                var misc = $(vars.income.misc).parent('ul').find('.numerical')
-                    .attr('data-value') ?
-                        $(vars.income.misc).parent('ul').find('.numerical')
-                    .attr('data-value') :
-                        0;
-                var total = parseFloat(gross) +  parseFloat(gross) +
-                            parseFloat(misc);
-                // only append once
-                if ($('.income .gross .total').length === 0) {
-                    $('.income .gross').append(
-                        '<li class="total">'+
-                            'Total : ' +
-                            '<span class="numerical">'+
-                                '$'+ total +
-                            '</span>' +
-                        '</li>'
-                    );
-                }
-
-                // get available cash
-                var costs = 0;
-                _.each($(vars.fixed_costs).parent().children(), function(el){
-                    var num = $(el).find('.numerical').attr('data-value');
-                    // make sure we got something
-                    if (typeof(num) !== 'undefined'){
-                        // while we're at it, make this red too
-                        $(el).find('.numerical').addClass('negative');
-                        costs += parseFloat(num);
-                    }
-                });
-
-                var available = (total - costs).toFixed(2);
-                app.income = parseFloat(available);
-                // put in the header
-                $(vars.income.header).html(
-                    ': $'+ available
-                );
-                //put at the end of the section
-                $(vars.income.section).html(
-                    'Total: $' + available
-                );
-            }, // end income function
+                IncomeView.payCalculations();
+            },
 
             debt : function(){
                 var debts = 0;

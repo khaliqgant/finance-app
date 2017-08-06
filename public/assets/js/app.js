@@ -3347,7 +3347,7 @@ module.exports.RotatingFileStream = RotatingFileStream;
 module.exports.safeCycles = safeCycles;
 
 }).call(this,{"isBuffer":require("/usr/local/lib/node_modules/watchify/node_modules/browserify/node_modules/insert-module-globals/node_modules/is-buffer/index.js")},require('_process'))
-},{"/usr/local/lib/node_modules/watchify/node_modules/browserify/node_modules/insert-module-globals/node_modules/is-buffer/index.js":39,"_process":41,"assert":36,"events":37,"fs":35,"os":40,"safe-json-stringify":3,"util":43}],3:[function(require,module,exports){
+},{"/usr/local/lib/node_modules/watchify/node_modules/browserify/node_modules/insert-module-globals/node_modules/is-buffer/index.js":41,"_process":43,"assert":38,"events":39,"fs":37,"os":42,"safe-json-stringify":3,"util":45}],3:[function(require,module,exports){
 var hasProp = Object.prototype.hasOwnProperty;
 
 function throwsMessage(err) {
@@ -18330,7 +18330,7 @@ return Q;
 });
 
 }).call(this,require('_process'))
-},{"_process":41}],9:[function(require,module,exports){
+},{"_process":43}],9:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -67200,7 +67200,7 @@ var Connect = {
 
 module.exports = Connect;
 
-},{"./server":30,"./vars":31,"backbone":1,"jquery":5}],25:[function(require,module,exports){
+},{"./server":31,"./vars":32,"backbone":1,"jquery":5}],25:[function(require,module,exports){
 /**
  * Finances.js
  * @author Khaliq Gant
@@ -67243,7 +67243,9 @@ var fx          = require('money');
 var DateView = require('./views/date');
 var PencilView = require('./views/pencil');
 var VisualizationView = require('./views/visualization');
+var IncomeView = require('./views/income');
 
+var OverviewModel = require('./models/overview');
 var DateModel = require('./models/date');
 var VisualizeModel = require('./models/visualize');
 var LayoutModel = require('./models/layout');
@@ -67870,7 +67872,7 @@ var Finances = (function(){
 
         updateOverview : function() {
             // find the diff
-            var difference = app.income - app.toPay;
+            var difference = OverviewModel.get('income') - app.toPay;
             $(vars.overview.short).text('$'+difference.toFixed(2));
             if (difference < 0) {
                 $(vars.overview.short).removeClass('plus');
@@ -67917,50 +67919,8 @@ var Finances = (function(){
              *      total income
              */
             income : function() {
-                // get total
-                var gross = $('.income .gross .numerical').attr('data-value');
-                var misc = $(vars.income.misc).parent('ul').find('.numerical')
-                    .attr('data-value') ?
-                        $(vars.income.misc).parent('ul').find('.numerical')
-                    .attr('data-value') :
-                        0;
-                var total = parseFloat(gross) +  parseFloat(gross) +
-                            parseFloat(misc);
-                // only append once
-                if ($('.income .gross .total').length === 0) {
-                    $('.income .gross').append(
-                        '<li class="total">'+
-                            'Total : ' +
-                            '<span class="numerical">'+
-                                '$'+ total +
-                            '</span>' +
-                        '</li>'
-                    );
-                }
-
-                // get available cash
-                var costs = 0;
-                _.each($(vars.fixed_costs).parent().children(), function(el){
-                    var num = $(el).find('.numerical').attr('data-value');
-                    // make sure we got something
-                    if (typeof(num) !== 'undefined'){
-                        // while we're at it, make this red too
-                        $(el).find('.numerical').addClass('negative');
-                        costs += parseFloat(num);
-                    }
-                });
-
-                var available = (total - costs).toFixed(2);
-                app.income = parseFloat(available);
-                // put in the header
-                $(vars.income.header).html(
-                    ': $'+ available
-                );
-                //put at the end of the section
-                $(vars.income.section).html(
-                    'Total: $' + available
-                );
-            }, // end income function
+                IncomeView.payCalculations();
+            },
 
             debt : function(){
                 var debts = 0;
@@ -68452,7 +68412,7 @@ $(document).ready(function() {
 });
 
 
-},{"./connect":24,"./models/date":26,"./models/layout":27,"./models/visualize":28,"./open-exchange":29,"./server":30,"./vars":31,"./views/date":32,"./views/pencil":33,"./views/visualization":34,"backbone":1,"bunyan":2,"enquire.js":4,"jquery":5,"moment":6,"money":7,"q":8,"sweetalert":17,"tap-listener":21,"underscore":22}],26:[function(require,module,exports){
+},{"./connect":24,"./models/date":26,"./models/layout":27,"./models/overview":28,"./models/visualize":29,"./open-exchange":30,"./server":31,"./vars":32,"./views/date":33,"./views/income":34,"./views/pencil":35,"./views/visualization":36,"backbone":1,"bunyan":2,"enquire.js":4,"jquery":5,"moment":6,"money":7,"q":8,"sweetalert":17,"tap-listener":21,"underscore":22}],26:[function(require,module,exports){
 /**
  * Date Model
  */
@@ -68496,7 +68456,6 @@ var Layout = Backbone.Model.extend({
     defaults: {
         sections: [
             'debt',
-            'taxes',
             'cash',
             'to_pay',
             'notes',
@@ -68509,6 +68468,25 @@ var Layout = Backbone.Model.extend({
 module.exports = new Layout();
 
 },{"backbone":1}],28:[function(require,module,exports){
+/**
+ * Overview Model
+ */
+
+var Backbone    = require('backbone');
+var Overview = Backbone.Model.extend({
+
+    defaults: {
+        income: 0,
+        debt: 0,
+        toPay: 0,
+        investments: 0,
+    },
+
+});
+
+module.exports = new Overview();
+
+},{"backbone":1}],29:[function(require,module,exports){
 /**
  * Visualize Model
  */
@@ -68534,7 +68512,7 @@ var Visualize = Backbone.Model.extend({
 
 module.exports = new Visualize();
 
-},{"backbone":1}],29:[function(require,module,exports){
+},{"backbone":1}],30:[function(require,module,exports){
 /**
  * Open-exchange
  * @author Khaliq Gant
@@ -68554,7 +68532,7 @@ module.exports = Open;
 
 
 
-},{}],30:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 /**
  * Server.js
  * @author Khaliq Gant
@@ -68828,7 +68806,7 @@ var Server = {
 
 module.exports = Server;
 
-},{"./vars":31,"backbone":1,"jquery":5,"moment":6,"q":8}],31:[function(require,module,exports){
+},{"./vars":32,"backbone":1,"jquery":5,"moment":6,"q":8}],32:[function(require,module,exports){
 /**
  * Vars.js
  * @author Khaliq Gant
@@ -68924,7 +68902,7 @@ var Vars = {
 module.exports = Vars;
 
 
-},{"moment":6}],32:[function(require,module,exports){
+},{"moment":6}],33:[function(require,module,exports){
 /**
  * Month View
  * @desc interact with the month model and handle increase/decrease actions
@@ -68959,7 +68937,110 @@ var DateView = Backbone.View.extend({
 
 module.exports = new DateView();
 
-},{"../vars":31,"backbone":1,"jquery":5}],33:[function(require,module,exports){
+},{"../vars":32,"backbone":1,"jquery":5}],34:[function(require,module,exports){
+/**
+ * Pencil View
+ */
+
+/* global document */
+
+'use strict';
+
+var Backbone       = require('backbone');
+var $              = require('jquery');
+var _              = require('underscore');
+var vars           = require('../vars');
+
+var OverviewModel = require('../models/overview');
+
+var Income = Backbone.View.extend({
+
+    initialSelector: '.income .salary',
+
+    initialize: function () {
+
+
+    },
+
+    /**
+     *
+     * Pay Calculation
+     * @desc calculate the amount received per paycheck and the total
+     *
+     */
+    payCalculations: function () {
+
+        // get total
+        var salary = $(this.initialSelector + ' .numerical').attr('data-value');
+        var gross = (salary / 12 / 2).toFixed(2);
+        var misc = $(vars.income.misc).parent('ul').find('.numerical')
+            .attr('data-value') ?
+            $(vars.income.misc).parent('ul').find('.numerical')
+            .attr('data-value') :
+            0;
+
+        this.append('gross', gross);
+
+        var total = parseFloat(gross) +  parseFloat(gross) +
+            parseFloat(misc);
+
+        this.append('total', total);
+
+        // get available cash
+        var costs = 0;
+        _.each($(vars.fixed_costs).parent().children(), function (el) {
+            var num = $(el).find('.numerical').attr('data-value');
+
+            // make sure we got something
+            if (typeof num !== 'undefined') {
+                // while we're at it, make this red too
+                $(el).find('.numerical').addClass('negative');
+                costs += parseFloat(num);
+            }
+        });
+
+        var available = (total - costs).toFixed(2);
+
+        OverviewModel.set('income', parseFloat(available));
+
+        // put in the header
+        $(vars.income.header).html(
+            ': $' + available
+        );
+
+        //put at the end of the section
+        $(vars.income.section).html(
+            'Total: $' + available
+        );
+
+    },
+
+    /**
+     *
+     * Append
+     * @desc add any arbitrary value to the initial selector in place
+     *
+     */
+    append: function (name, value) {
+
+        if ($(this.initialSelector + ' .' + name).length === 0) {
+            $(this.initialSelector).append(
+                '<li class="' + name + '">' +
+                name + ' : ' +
+                '<span class="numerical">' +
+                '$' + value +
+                '</span>' +
+                '</li>'
+            );
+        }
+
+    }
+
+});
+
+module.exports = new Income();
+
+},{"../models/overview":28,"../vars":32,"backbone":1,"jquery":5,"underscore":22}],35:[function(require,module,exports){
 /**
  * Pencil View
  */
@@ -69033,7 +69114,7 @@ var Pencil = Backbone.View.extend({
 
 module.exports = new Pencil();
 
-},{"../vars":31,"backbone":1,"jquery":5}],34:[function(require,module,exports){
+},{"../vars":32,"backbone":1,"jquery":5}],36:[function(require,module,exports){
 /**
  * Visualization View
  * @desc show the associated card data view on click
@@ -69166,9 +69247,9 @@ var Visualization = Backbone.View.extend({
 module.exports = new Visualization();
 
 
-},{"../models/visualize":28,"../vars":31,"backbone":1,"jquery":5,"vis":23}],35:[function(require,module,exports){
+},{"../models/visualize":29,"../vars":32,"backbone":1,"jquery":5,"vis":23}],37:[function(require,module,exports){
 
-},{}],36:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 // http://wiki.commonjs.org/wiki/Unit_Testing/1.0
 //
 // THIS IS NOT TESTED NOR LIKELY TO WORK OUTSIDE V8!
@@ -69529,7 +69610,7 @@ var objectKeys = Object.keys || function (obj) {
   return keys;
 };
 
-},{"util/":43}],37:[function(require,module,exports){
+},{"util/":45}],39:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -69832,7 +69913,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],38:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -69857,7 +69938,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],39:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 /**
  * Determine if an object is Buffer
  *
@@ -69876,7 +69957,7 @@ module.exports = function (obj) {
     ))
 }
 
-},{}],40:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 exports.endianness = function () { return 'LE' };
 
 exports.hostname = function () {
@@ -69923,7 +70004,7 @@ exports.tmpdir = exports.tmpDir = function () {
 
 exports.EOL = '\n';
 
-},{}],41:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -70016,14 +70097,14 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],42:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],43:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -70613,4 +70694,4 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":42,"_process":41,"inherits":38}]},{},[25]);
+},{"./support/isBuffer":44,"_process":43,"inherits":40}]},{},[25]);

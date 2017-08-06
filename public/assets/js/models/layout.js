@@ -8,7 +8,6 @@ var Layout = Backbone.Model.extend({
     defaults: {
         sections: [
             'debt',
-            'taxes',
             'cash',
             'to_pay',
             'notes',

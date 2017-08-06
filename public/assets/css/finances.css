@@ -25,6 +25,10 @@ input.text-input {
 ul.middle {
     margin-right : 125px;
 }
+
+li {
+    text-transform: capitalize;
+}
 /* Icons */
 i {
     cursor : pointer;
