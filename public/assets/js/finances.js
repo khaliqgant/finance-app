@@ -549,7 +549,8 @@ var Finances = (function(){
                             changedArray.push('bofa_cash');
                         }
 
-                        if (+app.money.model.get('debt')
+                        if (balance.travel !== null &&
+                            +app.money.model.get('debt')
                                 .credit_cards.visa.bofa_travel !== balance.travel)
                         {
                             app.money.model.get('debt')
