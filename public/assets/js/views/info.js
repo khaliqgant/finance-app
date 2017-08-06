@@ -1,5 +1,6 @@
 /**
  * Info View
+ * @dependencies https://atomiks.github.io/tippyjs/
  */
 
 /* global document */
