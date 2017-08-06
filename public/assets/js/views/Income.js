@@ -1,8 +1,6 @@
 /**
- * Pencil View
+ * Income View
  */
-
-/* global document */
 
 'use strict';
 
