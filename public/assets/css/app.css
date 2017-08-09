@@ -764,6 +764,14 @@ input.text-input {
     height : 30px;
     display: inline-block;
 }
+
+input.info-input {
+    width: 375px;
+    height: 30px;
+    display: inline-block;
+    margin-left: 3px;
+}
+
 .notes input.text-input {
     width : 525px;
 }

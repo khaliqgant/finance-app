@@ -43,6 +43,7 @@ var VisualizationView = require('./views/visualization');
 var IncomeView = require('./views/income');
 var InfoView = require('./views/info');
 var InputView = require('./views/input');
+var InfoInputView = require('./views/infoInput');
 
 var OverviewModel = require('./models/overview');
 var DateModel = require('./models/date');

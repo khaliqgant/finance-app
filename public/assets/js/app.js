@@ -3347,7 +3347,7 @@ module.exports.RotatingFileStream = RotatingFileStream;
 module.exports.safeCycles = safeCycles;
 
 }).call(this,{"isBuffer":require("/usr/local/lib/node_modules/watchify/node_modules/browserify/node_modules/insert-module-globals/node_modules/is-buffer/index.js")},require('_process'))
-},{"/usr/local/lib/node_modules/watchify/node_modules/browserify/node_modules/insert-module-globals/node_modules/is-buffer/index.js":44,"_process":46,"assert":41,"events":42,"fs":40,"os":45,"safe-json-stringify":3,"util":48}],3:[function(require,module,exports){
+},{"/usr/local/lib/node_modules/watchify/node_modules/browserify/node_modules/insert-module-globals/node_modules/is-buffer/index.js":46,"_process":48,"assert":43,"events":44,"fs":42,"os":47,"safe-json-stringify":3,"util":50}],3:[function(require,module,exports){
 var hasProp = Object.prototype.hasOwnProperty;
 
 function throwsMessage(err) {
@@ -18330,7 +18330,7 @@ return Q;
 });
 
 }).call(this,require('_process'))
-},{"_process":46}],9:[function(require,module,exports){
+},{"_process":48}],9:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -71131,7 +71131,7 @@ var Connect = {
 
 module.exports = Connect;
 
-},{"./server":32,"./vars":33,"backbone":1,"jquery":5}],26:[function(require,module,exports){
+},{"./server":33,"./vars":34,"backbone":1,"jquery":5}],26:[function(require,module,exports){
 /**
  * Finances.js
  * @author Khaliq Gant
@@ -71177,6 +71177,7 @@ var VisualizationView = require('./views/visualization');
 var IncomeView = require('./views/income');
 var InfoView = require('./views/info');
 var InputView = require('./views/input');
+var InfoInputView = require('./views/infoInput');
 
 var OverviewModel = require('./models/overview');
 var DateModel = require('./models/date');
@@ -72399,7 +72400,47 @@ $(document).ready(function() {
 });
 
 
-},{"./connect":25,"./models/date":27,"./models/layout":28,"./models/overview":29,"./models/visualize":30,"./open-exchange":31,"./server":32,"./vars":33,"./views/date":34,"./views/income":35,"./views/info":36,"./views/input":37,"./views/pencil":38,"./views/visualization":39,"backbone":1,"bunyan":2,"enquire.js":4,"jquery":5,"moment":6,"money":7,"q":8,"sweetalert":17,"tap-listener":21,"underscore":23}],27:[function(require,module,exports){
+},{"./connect":25,"./models/date":28,"./models/layout":29,"./models/overview":30,"./models/visualize":31,"./open-exchange":32,"./server":33,"./vars":34,"./views/date":35,"./views/income":36,"./views/info":37,"./views/infoInput":38,"./views/input":39,"./views/pencil":40,"./views/visualization":41,"backbone":1,"bunyan":2,"enquire.js":4,"jquery":5,"moment":6,"money":7,"q":8,"sweetalert":17,"tap-listener":21,"underscore":23}],27:[function(require,module,exports){
+/**
+ *  Input
+ *  @desc
+ */
+
+/* global $ */
+/* global jQuery */
+/* global _ */
+/* global Backbone */
+/* global window */
+/* global document */
+/* global _dev */
+/* global URI */
+/* global vmg_submit_form */
+/* global canvg */
+/* global vmg_update_cart_preview */
+
+'use strict';
+
+function Input() {
+}
+
+Input.prototype = {
+
+    map: function ($el) {
+
+        var data = {};
+        data.name = $el.attr('name');
+        data.key = $el.attr('data-key');
+        data.parent = $el.parents('.circle').attr('data-name')
+            .toLowerCase();
+
+        return data;
+
+    },
+};
+
+module.exports = Input;
+
+},{}],28:[function(require,module,exports){
 /**
  * Date Model
  */
@@ -72432,7 +72473,7 @@ var DateModel = Backbone.Model.extend({
 
 module.exports = new DateModel();
 
-},{"backbone":1,"moment":6}],28:[function(require,module,exports){
+},{"backbone":1,"moment":6}],29:[function(require,module,exports){
 /**
  * Layout Model
  */
@@ -72454,7 +72495,7 @@ var Layout = Backbone.Model.extend({
 
 module.exports = new Layout();
 
-},{"backbone":1}],29:[function(require,module,exports){
+},{"backbone":1}],30:[function(require,module,exports){
 /**
  * Overview Model
  */
@@ -72474,7 +72515,7 @@ var Overview = Backbone.Model.extend({
 
 module.exports = new Overview();
 
-},{"backbone":1}],30:[function(require,module,exports){
+},{"backbone":1}],31:[function(require,module,exports){
 /**
  * Visualize Model
  */
@@ -72500,7 +72541,7 @@ var Visualize = Backbone.Model.extend({
 
 module.exports = new Visualize();
 
-},{"backbone":1}],31:[function(require,module,exports){
+},{"backbone":1}],32:[function(require,module,exports){
 /**
  * Open-exchange
  * @author Khaliq Gant
@@ -72520,7 +72561,7 @@ module.exports = Open;
 
 
 
-},{}],32:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 /**
  * Server.js
  * @author Khaliq Gant
@@ -72794,7 +72835,7 @@ var Server = {
 
 module.exports = Server;
 
-},{"./vars":33,"backbone":1,"jquery":5,"moment":6,"q":8}],33:[function(require,module,exports){
+},{"./vars":34,"backbone":1,"jquery":5,"moment":6,"q":8}],34:[function(require,module,exports){
 /**
  * Vars.js
  * @author Khaliq Gant
@@ -72856,8 +72897,10 @@ var Vars = {
     pencil : '.js-pencil',
     info : '.js-info',
     confirm : '.js-confirm',
+    confirmInfo : '.js-confirm-info',
     noteConfirm : '.js-confirm-note',
     payInput : '.js-pay-input',
+    infoInput : '.js-info-input',
     noteInput : '.js-note-input',
     noteCatInput: '.js-note-cat-input',
     pencilHtml : ' <i class="fa fa-pencil-square-o js-pencil"></i>',
@@ -72891,7 +72934,7 @@ var Vars = {
 module.exports = Vars;
 
 
-},{"moment":6}],34:[function(require,module,exports){
+},{"moment":6}],35:[function(require,module,exports){
 /**
  * Month View
  * @desc interact with the month model and handle increase/decrease actions
@@ -72926,7 +72969,7 @@ var DateView = Backbone.View.extend({
 
 module.exports = new DateView();
 
-},{"../vars":33,"backbone":1,"jquery":5}],35:[function(require,module,exports){
+},{"../vars":34,"backbone":1,"jquery":5}],36:[function(require,module,exports){
 /**
  * Income View
  */
@@ -73027,9 +73070,10 @@ var Income = Backbone.View.extend({
 
 module.exports = new Income();
 
-},{"../models/overview":29,"../vars":33,"backbone":1,"jquery":5,"underscore":23}],36:[function(require,module,exports){
+},{"../models/overview":30,"../vars":34,"backbone":1,"jquery":5,"underscore":23}],37:[function(require,module,exports){
 /**
  * Info View
+ * @dependencies https://atomiks.github.io/tippyjs/
  */
 
 /* global document */
@@ -73047,7 +73091,8 @@ var Info = Backbone.View.extend({
 
         tippy(vars.info, {
             position: 'right',
-            theme: 'light'
+            theme: 'light',
+            dynamicTitle: true
         });
 
         $(document).on('click', vars.info, this.editInfo);
@@ -73062,8 +73107,26 @@ var Info = Backbone.View.extend({
      */
     editInfo: function (e) {
 
-        console.log('edit info');
-        // TODO
+        var $li = $(this).parents('li');
+        var key = $li.attr('data-key');
+        var model = $(this).parents('.financial').attr('data-model');
+        var oldInfo = $(this).attr('data-original-title');
+        var associatedValue = $li.find('.js-value').attr('data-value');
+        if (!$li.find(vars.confirmInfo).length) {
+            var input = '<input name="' + model + '"' +
+                'type="text" data-key="' + key + '"' +
+                'data-associated-value="' + associatedValue + '"' +
+                'class="info-input js-info-input">' +
+                ' <i class="fa fa-check-circle js-confirm-info">' +
+                '</i>';
+            $(this).after(input);
+        } else {
+            $(vars.infoInput).css('display', 'inline-block');
+            $(vars.confirmInfo).show();
+        }
+
+        $li.find(vars.infoInput).focus();
+        $li.find(vars.infoInput).val(oldInfo);
 
     },
 
@@ -73071,7 +73134,119 @@ var Info = Backbone.View.extend({
 
 module.exports = Info;
 
-},{"../vars":33,"backbone":1,"jquery":5,"tippy.js":22}],37:[function(require,module,exports){
+},{"../vars":34,"backbone":1,"jquery":5,"tippy.js":22}],38:[function(require,module,exports){
+/**
+ * Info Input View
+ */
+
+/* global document */
+
+'use strict';
+
+var Backbone       = require('backbone');
+var $              = require('jquery');
+var vars           = require('../vars');
+var OverviewModel  = require('../models/overview');
+var DateModel      = require('../models/date');
+var Server = require('../server');
+
+var InputH         = require('../helpers/input');
+var InputHelper = new InputH();
+
+var _this;
+
+var InfoInput = Backbone.View.extend({
+
+    initialize: function () {
+
+        _this = this;
+
+        $(document).on('click', vars.confirmInfo, this.confirm);
+        $(document).on('keyup', vars.infoInput, this.keyConfirm);
+
+    },
+
+    /**
+     *
+     * Confirm
+     * @desc grab the element and send to the handle on confirm click
+     *
+     */
+    confirm: function (e) {
+
+        var $self = $(this).prev();
+        _this.handler($self);
+
+    },
+
+    /**
+     *
+     * Key Confirm
+     * @desc on endter grab the element and send to the handler
+     *
+     */
+    keyConfirm: function (e) {
+
+        if (e.keyCode === 13) {
+            _this.handler($(this));
+        }
+
+    },
+
+    /**
+     *
+     * Handler
+     * @desc prepare the data to be sent to the server and adjust the DOM
+     * after a successful POST
+     *
+     */
+    handler: function ($self) {
+
+        var data = InputHelper.map($self);
+        var key = $self.attr('data-key');
+        var infoVal = $self.val();
+        var $infoEl = $self.prev();
+        var associatedValue = $self.attr('data-associated-value');
+
+        data.value = {
+            info: infoVal,
+            value: associatedValue
+        };
+        var $parentLi = $self.parents('li');
+
+        var object;
+        var model = $self.parents('.financial').attr('data-model');
+        if (OverviewModel.get('sectionModels').model.get(model).remote) {
+            model = OverviewModel.get('sectionModels').model.get(model);
+            object = false;
+        }
+
+        object = typeof object !== 'undefined' ?
+            false : $self.parents('.financial').attr('data-object');
+
+        Server.postIt(
+            model,
+            data.name,
+            data.key,
+            data.value,
+            data.parent,
+            object,
+            DateModel.get('current'),
+            function (result) {
+                if (result) {
+                    $parentLi.find(vars.infoInput).hide();
+                    $parentLi.find(vars.confirmInfo).hide();
+                    $infoEl.attr('title', infoVal);
+                }
+            });
+
+    }
+
+});
+
+module.exports = new InfoInput();
+
+},{"../helpers/input":27,"../models/date":28,"../models/overview":30,"../server":33,"../vars":34,"backbone":1,"jquery":5}],39:[function(require,module,exports){
 /**
  * Input View
  */
@@ -73197,7 +73372,7 @@ var Input = Backbone.View.extend({
 
 module.exports = new Input();
 
-},{"../models/date":27,"../models/overview":29,"../vars":33,"backbone":1,"jquery":5}],38:[function(require,module,exports){
+},{"../models/date":28,"../models/overview":30,"../vars":34,"backbone":1,"jquery":5}],40:[function(require,module,exports){
 /**
  * Pencil View
  */
@@ -73273,7 +73448,7 @@ var Pencil = Backbone.View.extend({
 
 module.exports = new Pencil();
 
-},{"../vars":33,"backbone":1,"jquery":5}],39:[function(require,module,exports){
+},{"../vars":34,"backbone":1,"jquery":5}],41:[function(require,module,exports){
 /**
  * Visualization View
  * @desc show the associated card data view on click
@@ -73406,9 +73581,9 @@ var Visualization = Backbone.View.extend({
 module.exports = new Visualization();
 
 
-},{"../models/visualize":30,"../vars":33,"backbone":1,"jquery":5,"vis":24}],40:[function(require,module,exports){
+},{"../models/visualize":31,"../vars":34,"backbone":1,"jquery":5,"vis":24}],42:[function(require,module,exports){
 
-},{}],41:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 // http://wiki.commonjs.org/wiki/Unit_Testing/1.0
 //
 // THIS IS NOT TESTED NOR LIKELY TO WORK OUTSIDE V8!
@@ -73769,7 +73944,7 @@ var objectKeys = Object.keys || function (obj) {
   return keys;
 };
 
-},{"util/":48}],42:[function(require,module,exports){
+},{"util/":50}],44:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -74072,7 +74247,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],43:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -74097,7 +74272,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],44:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 /**
  * Determine if an object is Buffer
  *
@@ -74116,7 +74291,7 @@ module.exports = function (obj) {
     ))
 }
 
-},{}],45:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 exports.endianness = function () { return 'LE' };
 
 exports.hostname = function () {
@@ -74163,7 +74338,7 @@ exports.tmpdir = exports.tmpDir = function () {
 
 exports.EOL = '\n';
 
-},{}],46:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -74256,14 +74431,14 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],47:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],48:[function(require,module,exports){
+},{}],50:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -74853,4 +75028,4 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":47,"_process":46,"inherits":43}]},{},[26]);
+},{"./support/isBuffer":49,"_process":48,"inherits":45}]},{},[26]);
