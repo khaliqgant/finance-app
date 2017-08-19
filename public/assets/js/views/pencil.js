@@ -34,9 +34,12 @@ var Pencil = Backbone.View.extend({
 
         if (!$li.find(vars.confirm).length) {
             var input = '<input name="' + model + '"' +
-                'type="text" data-key="' + key + '"' +
-                'data-info="' + info + '"' +
-                'class="text-input js-pay-input">' +
+                'type="text" data-key="' + key + '"';
+            if (info) {
+                input += 'data-info="' + info + '"';
+            }
+
+            input += 'class="text-input js-pay-input">' +
                 ' <i class="fa fa-check-circle js-confirm">' +
                 '</i>';
 
