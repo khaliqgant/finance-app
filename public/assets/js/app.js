@@ -3347,7 +3347,7 @@ module.exports.RotatingFileStream = RotatingFileStream;
 module.exports.safeCycles = safeCycles;
 
 }).call(this,{"isBuffer":require("/usr/local/lib/node_modules/watchify/node_modules/browserify/node_modules/insert-module-globals/node_modules/is-buffer/index.js")},require('_process'))
-},{"/usr/local/lib/node_modules/watchify/node_modules/browserify/node_modules/insert-module-globals/node_modules/is-buffer/index.js":46,"_process":48,"assert":43,"events":44,"fs":42,"os":47,"safe-json-stringify":3,"util":50}],3:[function(require,module,exports){
+},{"/usr/local/lib/node_modules/watchify/node_modules/browserify/node_modules/insert-module-globals/node_modules/is-buffer/index.js":47,"_process":49,"assert":44,"events":45,"fs":43,"os":48,"safe-json-stringify":3,"util":51}],3:[function(require,module,exports){
 var hasProp = Object.prototype.hasOwnProperty;
 
 function throwsMessage(err) {
@@ -18330,7 +18330,7 @@ return Q;
 });
 
 }).call(this,require('_process'))
-},{"_process":48}],9:[function(require,module,exports){
+},{"_process":49}],9:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -71178,6 +71178,7 @@ var IncomeView = require('./views/income');
 var InfoView = require('./views/info');
 var InputView = require('./views/input');
 var InfoInputView = require('./views/infoInput');
+var InfoAddView = require('./views/infoAdd');
 
 var OverviewModel = require('./models/overview');
 var DateModel = require('./models/date');
@@ -71588,6 +71589,9 @@ var Finances = (function(){
                                 '<% if (field.key !== "") { %>' +
                                     '</span>'+
                                 '<% } %>'+
+                                ' <i class="fa fa-plus info-plus ' +
+                                    'js-info-create">' +
+                                '</i>' +
                             '</li>'+
                         '<% }); %>' +
                     closeTag
@@ -72400,7 +72404,7 @@ $(document).ready(function() {
 });
 
 
-},{"./connect":25,"./models/date":28,"./models/layout":29,"./models/overview":30,"./models/visualize":31,"./open-exchange":32,"./server":33,"./vars":34,"./views/date":35,"./views/income":36,"./views/info":37,"./views/infoInput":38,"./views/input":39,"./views/pencil":40,"./views/visualization":41,"backbone":1,"bunyan":2,"enquire.js":4,"jquery":5,"moment":6,"money":7,"q":8,"sweetalert":17,"tap-listener":21,"underscore":23}],27:[function(require,module,exports){
+},{"./connect":25,"./models/date":28,"./models/layout":29,"./models/overview":30,"./models/visualize":31,"./open-exchange":32,"./server":33,"./vars":34,"./views/date":35,"./views/income":36,"./views/info":37,"./views/infoAdd":38,"./views/infoInput":39,"./views/input":40,"./views/pencil":41,"./views/visualization":42,"backbone":1,"bunyan":2,"enquire.js":4,"jquery":5,"moment":6,"money":7,"q":8,"sweetalert":17,"tap-listener":21,"underscore":23}],27:[function(require,module,exports){
 /**
  *  Input
  *  @desc
@@ -72896,6 +72900,7 @@ var Vars = {
     paid: '.js-paid',
     pencil: '.js-pencil',
     info: '.js-info',
+    infoCreate: '.js-info-create',
     confirm: '.js-confirm',
     confirmInfo: '.js-confirm-info',
     noteConfirm: '.js-confirm-note',
@@ -73136,6 +73141,64 @@ module.exports = Info;
 
 },{"../vars":34,"backbone":1,"jquery":5,"tippy.js":22}],38:[function(require,module,exports){
 /**
+ * Info View
+ * @dependencies https://atomiks.github.io/tippyjs/
+ */
+
+/* global document */
+
+'use strict';
+
+var Backbone       = require('backbone');
+var $              = require('jquery');
+var vars           = require('../vars');
+var tippy          = require('tippy.js');
+
+var InfoAdd = Backbone.View.extend({
+
+    initialize: function () {
+
+        $(document).on('click', vars.infoCreate, this.addInfo);
+
+    },
+
+    /**
+     *
+     * Add Info
+     * @desc change value to a input box when a pencil is clicked
+     *
+     */
+    addInfo: function (e) {
+
+        $(this).hide();
+        var $li = $(this).parents('li');
+        var key = $li.attr('data-key');
+        var model = $(this).parents('.financial').attr('data-model');
+        var associatedValue = $li.find('.js-value').attr('data-value');
+        if (!$li.find(vars.confirmInfo).length) {
+            var input = '<input name="' + model + '"' +
+                'type="text" data-key="' + key + '"' +
+                'data-associated-value="' + associatedValue + '"' +
+                'class="info-input js-info-input">' +
+                ' <i class="fa fa-check-circle js-confirm-info">' +
+                '</i>';
+            $(this).after(input);
+        } else {
+            $(vars.infoInput).css('display', 'inline-block');
+            $(vars.confirmInfo).show();
+        }
+
+        $li.find(vars.infoInput).focus();
+
+    },
+
+});
+
+module.exports = new InfoAdd();
+
+
+},{"../vars":34,"backbone":1,"jquery":5,"tippy.js":22}],39:[function(require,module,exports){
+/**
  * Info Input View
  */
 
@@ -73246,7 +73309,7 @@ var InfoInput = Backbone.View.extend({
 
 module.exports = new InfoInput();
 
-},{"../helpers/input":27,"../models/date":28,"../models/overview":30,"../server":33,"../vars":34,"backbone":1,"jquery":5}],39:[function(require,module,exports){
+},{"../helpers/input":27,"../models/date":28,"../models/overview":30,"../server":33,"../vars":34,"backbone":1,"jquery":5}],40:[function(require,module,exports){
 /**
  * Input View
  */
@@ -73372,7 +73435,7 @@ var Input = Backbone.View.extend({
 
 module.exports = new Input();
 
-},{"../models/date":28,"../models/overview":30,"../vars":34,"backbone":1,"jquery":5}],40:[function(require,module,exports){
+},{"../models/date":28,"../models/overview":30,"../vars":34,"backbone":1,"jquery":5}],41:[function(require,module,exports){
 /**
  * Pencil View
  */
@@ -73451,7 +73514,7 @@ var Pencil = Backbone.View.extend({
 
 module.exports = new Pencil();
 
-},{"../vars":34,"backbone":1,"jquery":5}],41:[function(require,module,exports){
+},{"../vars":34,"backbone":1,"jquery":5}],42:[function(require,module,exports){
 /**
  * Visualization View
  * @desc show the associated card data view on click
@@ -73584,9 +73647,9 @@ var Visualization = Backbone.View.extend({
 module.exports = new Visualization();
 
 
-},{"../models/visualize":31,"../vars":34,"backbone":1,"jquery":5,"vis":24}],42:[function(require,module,exports){
+},{"../models/visualize":31,"../vars":34,"backbone":1,"jquery":5,"vis":24}],43:[function(require,module,exports){
 
-},{}],43:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 // http://wiki.commonjs.org/wiki/Unit_Testing/1.0
 //
 // THIS IS NOT TESTED NOR LIKELY TO WORK OUTSIDE V8!
@@ -73947,7 +74010,7 @@ var objectKeys = Object.keys || function (obj) {
   return keys;
 };
 
-},{"util/":50}],44:[function(require,module,exports){
+},{"util/":51}],45:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -74250,7 +74313,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],45:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -74275,7 +74338,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],46:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 /**
  * Determine if an object is Buffer
  *
@@ -74294,7 +74357,7 @@ module.exports = function (obj) {
     ))
 }
 
-},{}],47:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 exports.endianness = function () { return 'LE' };
 
 exports.hostname = function () {
@@ -74341,7 +74404,7 @@ exports.tmpdir = exports.tmpDir = function () {
 
 exports.EOL = '\n';
 
-},{}],48:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -74434,14 +74497,14 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],49:[function(require,module,exports){
+},{}],50:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],50:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -75031,4 +75094,4 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":49,"_process":48,"inherits":45}]},{},[26]);
+},{"./support/isBuffer":50,"_process":49,"inherits":46}]},{},[26]);

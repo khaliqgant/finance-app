@@ -44,6 +44,7 @@ var IncomeView = require('./views/income');
 var InfoView = require('./views/info');
 var InputView = require('./views/input');
 var InfoInputView = require('./views/infoInput');
+var InfoAddView = require('./views/infoAdd');
 
 var OverviewModel = require('./models/overview');
 var DateModel = require('./models/date');
@@ -454,6 +455,9 @@ var Finances = (function(){
                                 '<% if (field.key !== "") { %>' +
                                     '</span>'+
                                 '<% } %>'+
+                                ' <i class="fa fa-plus info-plus ' +
+                                    'js-info-create">' +
+                                '</i>' +
                             '</li>'+
                         '<% }); %>' +
                     closeTag

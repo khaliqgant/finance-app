@@ -51,6 +51,10 @@ i {
     color: green;
 }
 
+.fa-info-circle.small {
+    font-size: 12px;
+}
+
 .fa-minus {
     padding-right: 5px;
     color : lightblue;
@@ -62,6 +66,12 @@ i {
 }
 .fa-plus.inactive {
     color : white;
+}
+
+.fa-plus.info-plus {
+    padding-left: 1px;
+    font-size: 8px;
+    color: green;
 }
 
 .fa-refresh {

@@ -58,6 +58,7 @@ var Vars = {
     paid: '.js-paid',
     pencil: '.js-pencil',
     info: '.js-info',
+    infoCreate: '.js-info-create',
     confirm: '.js-confirm',
     confirmInfo: '.js-confirm-info',
     noteConfirm: '.js-confirm-note',
