@@ -8,7 +8,7 @@ alias upload:data='sshpass -f auth/.pass rsync -r data khaliqgant:/home/kjg/fina
 alias upload:config='rsync config.json khaliqgant:/home/kjg/finances -v'
 alias es='/usr/local/bin/elasticsearch --config=/usr/local/opt/elasticsearch/config/elasticsearch.yml'
 
-dropbox_data=~/Dropbox\ \(Personal\)/KJG/Personal/Finances/App\ Data\ Backup/
+dropbox_data=~/Dropbox/KJG/Personal/Finances/App\ Data\ Backup/
 
 backup:data() {
     sshpass -f auth/.pass rsync -r khaliqgant:/home/kjg/finances/data $dropbox_data
