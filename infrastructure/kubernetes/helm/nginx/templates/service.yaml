@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+    name: {{ .Values.app }}
+spec:
+    type: NodePort
+    ports:
+    - name: http
+      port: 80
+      targetPort: nginx-http
+    - name: https
+      port: 443
+      targetPort: nginx-https
+    selector:
+        app: {{ .Values.app }}
+    externalIPs:
+      - 46.101.211.54

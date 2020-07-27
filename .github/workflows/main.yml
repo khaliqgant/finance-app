@@ -1,0 +1,82 @@
+name: Docker Build & Publish, Kubernetes Deploy
+
+on:
+  push:
+    branches: [ dockerize ]
+  pull_request:
+    branches: [ dockerize ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Build and push Docker images
+      uses: docker/build-push-action@v1
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        repository: khaliqgant/finance-app-node
+        dockerfile: infrastructure/docker/node/Dockerfile
+        tags: ${{ github.sha }}
+
+    - name: Build and push Docker images
+      uses: docker/build-push-action@v1
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        repository: khaliqgant/finance-app-nginx
+        dockerfile: infrastructure/docker/nginx/Dockerfile
+        tags: ${{ github.sha }}
+
+    - name: Set k8s context
+      uses: azure/k8s-set-context@v1
+      with:
+        method: kubeconfig
+        kubeconfig: ${{ secrets.KUBE_CONFIG }}
+      id: setcontext
+
+    - name: Create k8s secret
+      uses: Azure/k8s-create-secret@v1
+      with:
+        container-registry-url: registry.hub.docker.com
+        container-registry-username: ${{ secrets.DOCKER_USERNAME }}
+        container-registry-password: ${{ secrets.DOCKER_PASSWORD }}
+        secret-name: finance-app-k8s-secret
+
+    - uses: azure/k8s-bake@v1
+      with:
+        renderEngine: helm
+        helmChart: infrastructure/kubernetes/helm/app/
+        overrides: |
+            imageVersion:${{ github.sha }}
+        helm-version: latest
+        silent: false
+      id: bake
+
+    - uses: Azure/k8s-deploy@v1
+      with:
+        manifests: ${{ steps.bake.outputs.manifestsBundle }}
+        images: |
+          khaliqgant/finance-app-node:${{ github.sha }}
+        imagepullsecrets: |
+          finance-app-k8s-secret
+
+    - uses: azure/k8s-bake@v1
+      with:
+        renderEngine: helm
+        helmChart: infrastructure/kubernetes/helm/nginx/
+        overrides: |
+            imageVersion:${{ github.sha }}
+        helm-version: latest
+        silent: false
+      id: bake
+
+    - uses: Azure/k8s-deploy@v1
+      with:
+        manifests: ${{ steps.bake.outputs.manifestsBundle }}
+        images: |
+          khaliqgant/finance-app-nginx:${{ github.sha }}
+        imagepullsecrets: |
+          finance-app-k8s-secret

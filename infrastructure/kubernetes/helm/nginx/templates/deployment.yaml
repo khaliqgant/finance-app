@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.app }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.app }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.app }}
+    spec:
+      containers:
+      - name: {{ .Values.app }}
+        image: {{ .Values.app }}/{{ .Values.app }}:{{ .Values.imageVersion }}
+        imagePullPolicy: Always
+        ports:
+          - name: nginx-http
+            containerPort: 80
+          - name: nginx-https
+            containerPort: 443
+        env:
+        - name: CERTBOT_EMAIL
+          value: {{ .Values.email }}
+        volumeMounts:
+        - mountPath: /etc/letsencrypt
+          name: letsencrypt-volume
+      imagePullSecrets:
+      - name: {{ .Values.registryCreds }}
+      volumes:
+      - name: letsencrypt-volume
+        persistentVolumeClaim:
+          claimName: letsencrypt-volume
