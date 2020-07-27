@@ -2,7 +2,6 @@
 /node_modules/
 /data/*
 nohup.out
-auth/*
 /elasticsearch/venv/
 *.pyc
 /elasticsearch/schema.json
