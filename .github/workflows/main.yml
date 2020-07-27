@@ -53,11 +53,11 @@ jobs:
             imageVersion:${{ github.sha }}
         helm-version: latest
         silent: false
-      id: bake
+      id: appBake
 
     - uses: Azure/k8s-deploy@v1
       with:
-        manifests: ${{ steps.bake.outputs.manifestsBundle }}
+        manifests: ${{ steps.appBake.outputs.manifestsBundle }}
         images: |
           khaliqgant/finance-app-node:${{ github.sha }}
         imagepullsecrets: |
@@ -71,11 +71,11 @@ jobs:
             imageVersion:${{ github.sha }}
         helm-version: latest
         silent: false
-      id: bake
+      id: nginxBake
 
     - uses: Azure/k8s-deploy@v1
       with:
-        manifests: ${{ steps.bake.outputs.manifestsBundle }}
+        manifests: ${{ steps.nginxBake.outputs.manifestsBundle }}
         images: |
           khaliqgant/finance-app-nginx:${{ github.sha }}
         imagepullsecrets: |
