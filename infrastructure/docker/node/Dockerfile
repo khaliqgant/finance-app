@@ -2,8 +2,8 @@ FROM node:10.16.0
 
 WORKDIR /finances
 
-RUN mkdir -p /finances/node_modules /finances/dist
-RUN chown -R node:node /finances/node_modules /finances/dist
+RUN mkdir -p /finances/node_modules
+RUN chown -R node:node /finances/node_modules
 
 COPY --chown=node:node package.json package-lock.json ./
 
