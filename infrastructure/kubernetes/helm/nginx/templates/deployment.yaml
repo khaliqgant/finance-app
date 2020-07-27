@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: {{ .Values.app }}
-        image: {{ .Values.app }}/{{ .Values.app }}:{{ .Values.imageVersion }}
+        image: khaliqgant/{{ .Values.app }}:{{ .Values.imageVersion }}
         imagePullPolicy: Always
         ports:
           - name: nginx-http
