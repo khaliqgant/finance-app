@@ -21,10 +21,6 @@ var api = require('./api/info');
 var connect = require('./api/connect');
 var config = JSON.parse(fs.readFileSync('config.json'));
 
-if (app.get('env') === 'prod') {
-    app.use(auth.connect(basic));
-}
-
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
