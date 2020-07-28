@@ -21,6 +21,8 @@ spec:
         env:
         - name: NODE_ENV
           value: prod
+        - name: GIT_CRYPT_KEY
+          value: {{ .Values.GIT_CRYPT_KEY }}
         volumeMounts:
         - mountPath: /{{ .Values.app }}/data
           name: {{ .Values.app }}-volume
