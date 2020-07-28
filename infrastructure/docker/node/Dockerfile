@@ -13,4 +13,5 @@ RUN chmod +x ./infrastructure/docker/node/entrypoint.sh
 FROM app AS appFiles
 USER node
 COPY --chown=node:node --from=app / /finances
+WORKDIR /finances
 ENTRYPOINT ["./infrastructure/docker/node/entrypoint.sh"]
