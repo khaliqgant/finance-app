@@ -7,11 +7,6 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var fs = require('fs');
-var auth = require('http-auth');
-var basic = auth.basic({
-    realm: 'Khaliq\'s Finances',
-    file: __dirname + '/auth/.htpasswd'
-});
 
 var routes = require('./routes/index');
 
