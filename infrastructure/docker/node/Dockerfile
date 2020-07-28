@@ -1,20 +1,16 @@
-FROM node:10.16.0
-
-WORKDIR /finances
+FROM node:10.16.0 as app
 
 RUN apt-get update && apt-get install git-crypt
 
-RUN mkdir -p /finances/node_modules
-RUN chown -R node:node /finances/node_modules
-
-COPY --chown=node:node package.json package-lock.json ./
+ADD . .
 
 RUN npm ci --dev
 RUN npm install -g nodemon
 
-COPY --chown=node:node . /finances
 RUN chmod +x ./infrastructure/docker/node/entrypoint.sh
 
-USER node
 
+FROM app AS appFiles
+USER node
+COPY --chown=node:node --from=app /finances
 ENTRYPOINT ["./infrastructure/docker/node/entrypoint.sh"]
