@@ -24,11 +24,11 @@ spec:
         - name: GIT_CRYPT_KEY
           value: {{ .Values.GIT_CRYPT_KEY }}
         volumeMounts:
-        - mountPath: /{{ .Values.app }}/data
-          name: {{ .Values.app }}-volume
+        - mountPath: /{{ .Values.volumeName }}/data
+          name: {{ .Values.volumeName }}-volume
       imagePullSecrets:
       - name: {{ .Values.registryCreds }}
       volumes:
-      - name: {{ .Values.app }}-volume
+      - name: {{ .Values.volumeName }}-volume
         persistentVolumeClaim:
-          claimName: {{ .Values.app }}-volume
+          claimName: {{ .Values.volumeName }}-volume

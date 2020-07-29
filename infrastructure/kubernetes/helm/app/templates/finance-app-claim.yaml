@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ .Values.app }}-volume
+  name: {{ .Values.volumeName }}-volume
 spec:
-  storageClassName: manual-{{ .Values.app }}
+  storageClassName: manual-{{ .Values.volumeName }}
   accessModes:
   - ReadWriteOnce
   resources:
