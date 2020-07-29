@@ -22,6 +22,8 @@ spec:
           - name: nginx-https
             containerPort: 443
         env:
+        - name: APP_URL
+          value: finances.khaliqgant.com
         - name: CERTBOT_EMAIL
           value: {{ .Values.email }}
         volumeMounts:
