@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: {{ .Values.app }}
-        image: khaliqgant/{{ .Values.app }}-node:{{ .Values.imageVersion }}
+        image: khaliqgant/finance-app-node:{{ .Values.imageVersion }}
         imagePullPolicy: Always
         ports:
           - containerPort: {{ .Values.port }}

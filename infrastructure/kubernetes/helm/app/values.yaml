@@ -1,3 +1,3 @@
-app: finance-app
+app: financeApp
 registryCreds: regcred
 port: 3000
