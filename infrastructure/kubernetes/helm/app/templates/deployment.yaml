@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: {{ .Values.app }}
-        image: khaliqgant/finance-app-node:{{ .Values.imageVersion }}
+        image: khaliqgant/{{ .Values.app }}-node:{{ .Values.imageVersion }}
         imagePullPolicy: Always
         ports:
           - containerPort: {{ .Values.port }}
@@ -24,11 +24,11 @@ spec:
         - name: GIT_CRYPT_KEY
           value: {{ .Values.GIT_CRYPT_KEY }}
         volumeMounts:
-        - mountPath: /{{ .Values.volumeName }}/data
-          name: {{ .Values.volumeName }}-volume
+        - mountPath: /{{ .Values.app }}/data
+          name: {{ .Values.app }}-volume
       imagePullSecrets:
       - name: {{ .Values.registryCreds }}
       volumes:
-      - name: {{ .Values.volumeName }}-volume
+      - name: {{ .Values.app }}-volume
         persistentVolumeClaim:
-          claimName: {{ .Values.volumeName }}-volume
+          claimName: {{ .Values.app }}-volume

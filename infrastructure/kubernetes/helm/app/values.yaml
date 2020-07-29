@@ -1,4 +1,3 @@
-app: financeApp
-volumeName: finance-app
+app: finance-app
 registryCreds: regcred
 port: 3000
