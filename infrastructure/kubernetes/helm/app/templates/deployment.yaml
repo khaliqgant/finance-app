@@ -24,7 +24,7 @@ spec:
         - name: GIT_CRYPT_KEY
           value: {{ .Values.GIT_CRYPT_KEY }}
         volumeMounts:
-        - mountPath: /{{ .Values.app }}/data
+        - mountPath: /finances
           name: {{ .Values.app }}-volume
       imagePullSecrets:
       - name: {{ .Values.registryCreds }}
