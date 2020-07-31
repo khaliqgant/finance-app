@@ -15,5 +15,5 @@ FROM app AS appFiles
 USER node
 COPY --chown=node:node --from=app /src /finances
 WORKDIR /finances
-RUN ls
+RUN cat ./infrastructure/docker/node/entrypoint.sh
 ENTRYPOINT ["./infrastructure/docker/node/entrypoint.sh"]
