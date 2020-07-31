@@ -7,11 +7,6 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var fs = require('fs');
-var auth = require('http-auth');
-var basic = auth.basic({
-    realm: 'Khaliq\'s Finances',
-    file: __dirname + '/auth/.htpasswd'
-});
 
 var routes = require('./routes/index');
 
@@ -20,10 +15,6 @@ var trends = require('./analysis/trends');
 var api = require('./api/info');
 var connect = require('./api/connect');
 var config = JSON.parse(fs.readFileSync('config.json'));
-
-if (app.get('env') === 'prod') {
-    app.use(auth.connect(basic));
-}
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));

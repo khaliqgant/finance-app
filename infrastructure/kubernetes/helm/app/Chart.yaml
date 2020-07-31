@@ -1,0 +1,4 @@
+apiVersion: v1
+name: finances-app
+version: 0.0.1
+description: Charts for k8s deployment

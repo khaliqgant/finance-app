@@ -2,12 +2,10 @@
 /node_modules/
 /data/*
 nohup.out
-auth/*
 /elasticsearch/venv/
 *.pyc
 /elasticsearch/schema.json
 /logs
-config.json
 
 #c ignore https://github.com/github/gitignore/blob/master/C.gitignore
 # Object files
