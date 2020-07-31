@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 echo "$GIT_CRYPT_KEY" | base64  -d > ./git-crypt-key
 git checkout -- .
