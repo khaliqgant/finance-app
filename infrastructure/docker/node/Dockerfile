@@ -8,11 +8,11 @@ WORKDIR /src
 RUN npm ci --dev
 RUN npm install -g nodemon
 
+RUN chmod +x ./infrastructure/docker/node/entrypoint.sh
 
 
 FROM app AS appFiles
 USER node
 COPY --chown=node:node --from=app /src /finances
 WORKDIR /finances
-RUN chmod +x ./infrastructure/docker/node/entrypoint.sh
 ENTRYPOINT ["./infrastructure/docker/node/entrypoint.sh"]
