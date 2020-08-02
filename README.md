@@ -8,9 +8,8 @@ A simple app to manage finances
 my current and future expenses. So I built this. I've been using this pretty consistently
 over the past 4 or so months and it has worked out great. I open sourced it in hopes
 that others might find it useful as well. Check out this
-[blog post](http://blog.khaliqgant.com/post/141000794547/my-personal-finance-app)
-to learn more about the motivation behind this. A demo
-app is hosted at http://finance.khaliqgant.com/
+[blog post](https://khaliqgant.com/blog/my-personal-finance-app/)
+to learn more about the motivation behind this.
 
 
 ## Getting Started
