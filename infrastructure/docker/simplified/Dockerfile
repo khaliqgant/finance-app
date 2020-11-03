@@ -22,3 +22,5 @@ EXPOSE 3000
 
 # adding volume to pass-through config
 VOLUME ["/usr/share/finance-app"]
+
+HEALTHCHECK --interval=15s --timeout=10s CMD curl -f http://localhost || exit 1
