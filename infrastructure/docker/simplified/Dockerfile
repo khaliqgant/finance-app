@@ -15,7 +15,7 @@ RUN npm install && \
     chmod +x entrypoint.sh
 
 # start command
-CMD ["/bin/bash", "/usr/share/finance-app/entrypoint.sh"]
+CMD ["/bin/bash", "/usr/share/finance-app/infrastructure/docker/simplified/entrypoint.sh"]
 
 # port used by http
 EXPOSE 3000
