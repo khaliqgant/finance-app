@@ -40,6 +40,11 @@ months data into new files so you can forecast payments as well.
 * Aggregations are run on the data once a month
 * Explained more [here](https://github.com/khaliqgant/finance-app/tree/master/elasticsearch)
 
+# Docker
+* A simplified Docker build has been added for those who are not in the depth with Docker builds
+* Also a example [docker-compose.yml](https://github.com/stroskler/finance-app/tree/master/infrastructure/docker/simplified/docker-compose.yml) file has been added for simple use. 
+
+
 
 # Development
 * Any pull requests are welcomed and encouraged!
@@ -66,6 +71,7 @@ You can generate such a file [here](http://www.htaccesstools.com/htpasswd-genera
     * https://github.com/plaid/plaid-node
 * Use graphs to show changes over time
 * Need task runner commands to automate the browersify and npm-css process
+* Fix Image on Dockerhub
 
 ## Notes
 * Icons used are http://fortawesome.github.io/Font-Awesome/icons/
