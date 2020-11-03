@@ -42,7 +42,9 @@ months data into new files so you can forecast payments as well.
 
 # Docker
 * A simplified Docker build has been added for those who are not in the depth with Docker builds
-* Also a example 'docker-compose' file has been added for simple use.
+* Also a example [docker-compose.yml](https://github.com/stroskler/finance-app/tree/master/infrastructure/docker/simplified/docker-compose.yml) file has been added for simple use. 
+
+
 
 # Development
 * Any pull requests are welcomed and encouraged!
