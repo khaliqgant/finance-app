@@ -14,7 +14,7 @@
     "custombox": "^3.0.2",
     "debug": "~2.6.9",
     "enquire.js": "^2.1.1",
-    "express": "^4.12.3",
+    "express": "^4.17.3",
     "font-awesome": "^4.3.0",
     "foundation-sites": "^5.5.2",
     "interact.js": "^1.2.4",
