@@ -1,4 +1,4 @@
-FROM node:11 as app
+FROM node:16 as app
 
 RUN apt-get update && apt-get install git-crypt
 
