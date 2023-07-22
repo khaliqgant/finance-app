@@ -1,4 +1,4 @@
-Khaliq's Personal Finance App
+Khaliq's Personal Finance App 
 ===
 
 A simple app to manage finances
