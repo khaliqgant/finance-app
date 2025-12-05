@@ -1,5 +1,5 @@
 Khaliq's Personal Finance App 
-===
+====
 
 A simple app to manage finances
 
